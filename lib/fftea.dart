@@ -27,17 +27,72 @@ bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
 class ComplexArray {
   Float64List _a;
 
+  /// Constructs a ComplexArray from a Float64List.
+  ///
+  /// The given Float64List must be in the correct format. The values must
+  /// alternate between real and complex components:
+  /// `[real0, imag0, real1, imag1, ...]`
   ComplexArray(this._a);
 
+  /// Length of the ComplexArray.
+  ///
+  /// That is, the number of (real, imag) pairs in the array.
   int get length => _a.length ~/ 2;
+
+  /// Returns the underlying array.
+  ///
+  /// The values in the array alternate between real and complex components:
+  /// `[real0, imag0, real1, imag1, ...]`
   Float64List get array => _a;
 
+  /// Returns a copy of this ComplexArray.
+  ///
+  /// The underlying array is copied, so modifications to the returned
+  /// ComplexArray will not affect this one.
+  ComplexArray copy() => ComplexArray(Float64List.fromList(_a));
+
+  /// Converts a real array to a ComplexArray.
   static ComplexArray fromRealArray(List<double> reals) {
     final a = Float64List(reals.length << 1);
     for (int i = 0; i < reals.length; ++i) {
       a[i << 1] = reals[i];
     }
     return ComplexArray(a);
+  }
+
+  /// Returns the real components of the ComplexArray.
+  ///
+  /// This method just discards the imaginary components.
+  Float64List toRealArray() {
+    final r = Float64List(length);
+    for (int i = 0; i < r.length; ++i) {
+      r[i] = _a[i << 1];
+    }
+    return r;
+  }
+
+  /// Returns the square magnitudes of the elements of the ComplexArray.
+  ///
+  /// If you need the squares of the magnitudes, this method is much more
+  /// efficient than calling `magnitudes()` then squaring those values.
+  Float64List squareMagnitudes() {
+    final m = Float64List(length);
+    for (int i = 0; i < m.length; ++i) {
+      final j = i << 1;
+      final x = _a[j];
+      final y = _a[j + 1];
+      m[i] = x * x + y * y;
+    }
+    return m;
+  }
+
+  /// Returns the magnitudes of the elements of the ComplexArray.
+  Float64List magnitudes() {
+    final m = squareMagnitudes();
+    for (int i = 0; i < m.length; ++i) {
+      m[i] = math.sqrt(m[i]);
+    }
+    return m;
   }
 }
 
@@ -92,8 +147,8 @@ class FFT {
   /// [complexArray]. No new arrays are allocated by this method.
   ///
   /// This is the most efficient FFT method, if your data is already in the
-  /// correct format. Otherwise, you can use one of the other methods to handle
-  /// the conversion for you.
+  /// correct format. Otherwise, you can use [realFft] to handle the conversion
+  /// for you.
   void inPlaceFft(ComplexArray complexArray) {
     final a = complexArray._a;
     final n = _twiddles.length;
@@ -155,5 +210,56 @@ class FFT {
     final o = ComplexArray.fromRealArray(a);
     inPlaceFft(o);
     return o;
+  }
+
+  /// In-place inverse FFT.
+  ///
+  /// Performs an in-place inverse FFT on [complexArray]. The result is stored
+  /// back in [complexArray]. No new arrays are allocated by this method.
+  void inPlaceInverseFft(ComplexArray complexArray) {
+    inPlaceFft(complexArray);
+    final a = complexArray.array;
+    final len = a.length;
+    final half = len >> 1;
+    final scale = half.toDouble();
+    a[0] /= scale;
+    a[1] /= scale;
+    if (len <= 2) return;
+    for (int i = 2; i < half; i += 2) {
+      final ii = i + 1;
+      final jr = len - i;
+      final ji = jr + 1;
+      final tr = a[jr] / scale;
+      final ti = a[ji] / scale;
+      a[jr] = a[i] / scale;
+      a[ji] = a[ii] / scale;
+      a[i] = tr;
+      a[ii] = ti;
+    }
+    a[half] /= scale;
+    a[half + 1] /= scale;
+  }
+
+  /// Real-valued inverse FFT.
+  ///
+  /// Performs an inverse FFT and discards the imaginary components of the
+  /// result.
+  ///
+  /// WARINING: For efficiency reasons, this modifies [complexArray]. If you
+  /// need the original values in [complexArray] to remain unmodified, make a
+  /// copy of it first: `realInverseFft(complexArray.copy())`
+  Float64List realInverseFft(ComplexArray complexArray) {
+    inPlaceFft(complexArray);
+    final a = complexArray.array;
+    final len = a.length;
+    final half = len >> 1;
+    final scale = half.toDouble();
+    final r = Float64List(half);
+    r[0] = a[0] / scale;
+    if (len <= 2) return r;
+    for (int i = 1; i < half; ++i) {
+      r[i] = a[len - (i << 1)] / scale;
+    }
+    return r;
   }
 }
