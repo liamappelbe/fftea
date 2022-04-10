@@ -8,7 +8,7 @@ functions, STFT, and inverse FFT.
 
 This package was built because package:fft is not actively maintained anymore,
 and wasn't a particularly efficient implementation. There are a few
-improvements that make this implementation more effienct:
+improvements that make this implementation more efficient:
 
 - The main FFT class is constructed with a given size, so that the twiddle
   factors only have to be calculated once. This is particularly handy for STFT.
@@ -58,10 +58,6 @@ is not included in the benchmark.
 | 16384 | 59.59 ms | 61.38 ms | 1.48 ms | 1.25 ms | 3.23 s | 3.22 s | 1.78 ms | 1.27 ms | 1.49 ms | 1.12 ms |
 | 65536 | 332.65 ms | 349.81 ms | 8.26 ms | 7.58 ms | 67.70 s | 67.75 s | 7.05 ms | 5.87 ms | 6.37 ms | 5.28 ms |
 
-* Scidart's FFT doesn't have an in-place mode, but they do use a custom format,
-so in-place means that the time to convert to that format is not included in the
-benchmark.
-
 In practice, you usually know how big your FFT is ahead of time, so it's pretty
 easy to construct your FFT object once, to take advantage of the caching. It's
 sometimes possible to take advantage of the in-place speed up too, for example
@@ -71,3 +67,7 @@ the "fftea, cached" times are probably the most representative. In that case,
 fftea is about 30-40x faster than package:fft, and about 30% faster than
 smart_signal_processing. Not sure what's going on with scidart, but it seems to
 be O(n^2).
+
+\* Scidart's FFT doesn't have an in-place mode, but they do use a custom format,
+so in-place means that the time to convert to that format is not included in the
+benchmark.
