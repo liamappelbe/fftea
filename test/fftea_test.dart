@@ -16,13 +16,12 @@
 // python3 test/generate_fft_test_cases.py
 
 import 'dart:typed_data';
-import 'package:test/test.dart';
 import 'package:fftea/fftea.dart';
+import 'package:test/test.dart';
 
 void testFft(List<double> inp, List<double> exp) {
   final buf = ComplexArray(Float64List.fromList(inp));
-  final fft = FFT(buf.length);
-  fft.inPlaceFft(buf);
+  final fft = FFT(buf.length)..inPlaceFft(buf);
   expect(buf.length, inp.length / 2);
   expect(buf.array.length, exp.length);
   for (int i = 0; i < buf.array.length; ++i) {
@@ -50,9 +49,11 @@ void testRealFft(List<double> inp, List<double> exp) {
   }
 }
 
-main() {
+void main() {
   test('ComplexArray', () {
-    final a = ComplexArray(Float64List.fromList([-4.24926712, 0.43567775, 2.51713706, -7.76003700]));
+    final a = ComplexArray(
+      Float64List.fromList([-4.24926712, 0.43567775, 2.51713706, -7.76003700]),
+    );
     expect(a.length, 2);
     expect(a.array.length, 4);
 

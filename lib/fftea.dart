@@ -25,7 +25,7 @@ bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
 ///
 /// This wrapper exists mainly for documentation and type safety purposes.
 class ComplexArray {
-  Float64List _a;
+  final Float64List _a;
 
   /// Constructs a ComplexArray from a Float64List.
   ///
@@ -176,7 +176,7 @@ class FFT {
     }
     for (int m = 1; m < n;) {
       final m2 = m << 1;
-      final n_m = n ~/ m;
+      final nm = n ~/ m;
       for (int k = 0, t = 0; k < n2;) {
         final km = k + m2;
         final pr = a[k];
@@ -192,7 +192,7 @@ class FFT {
         a[km] = pr - qr;
         a[km + 1] = pi - qi;
         k += 2;
-        t += n_m;
+        t += nm;
         if (t >= n) {
           k += m2;
           t = 0;

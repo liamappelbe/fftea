@@ -23,8 +23,11 @@ environment:
   sdk: ">=2.7.0 <3.0.0"
 
 dependencies:
+  fft: ^0.3.0
   fftea:
     path: ..
-  fft: ^0.3.0
   scidart: ^0.0.2-dev.9
   smart_signal_processing: ^2.1.1
+
+dev_dependencies:
+  lints: ^1.0.0
