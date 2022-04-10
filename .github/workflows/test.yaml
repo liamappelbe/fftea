@@ -17,9 +17,6 @@ jobs:
     strategy:
       matrix:
         sdk: [ dev ]
-    defaults:
-      run:
-        working-directory: fftea
     steps:
     - uses: actions/checkout@v2.3.4
     - uses: dart-lang/setup-dart@v1.0
@@ -45,9 +42,6 @@ jobs:
       fail-fast: false
       matrix:
         sdk: [ 2.12.0, dev ]
-    defaults:
-      run:
-        working-directory: fftea
     steps:
     - uses: dart-lang/setup-dart@v1.0
       with:
