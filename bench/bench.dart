@@ -96,16 +96,16 @@ bench(int sizeLog2) {
       // package:scidart
       {
         scidartTimer.start();
-        final cplx = numdart.ArrayComplex(List.from(inp.map(
-            (x) => numdart.Complex(real: x))));
+        final cplx = numdart.ArrayComplex(
+            List.from(inp.map((x) => numdart.Complex(real: x))));
         final o = scidart.fft(cplx);
         scidartTimer.stop();
       }
 
       // package:scidart, in-place
       {
-        final cplx = numdart.ArrayComplex(List.from(inp.map(
-            (x) => numdart.Complex(real: x))));
+        final cplx = numdart.ArrayComplex(
+            List.from(inp.map((x) => numdart.Complex(real: x))));
         scidartInPlaceTimer.start();
         final o = scidart.fft(cplx);
         scidartInPlaceTimer.stop();

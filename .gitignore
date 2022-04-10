@@ -1,3 +1,4 @@
+*.pyc
 **/doc/api/
 .dart_tool/
 .packages
