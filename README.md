@@ -1,5 +1,7 @@
 # fftea
 
+[![Build Status](https://github.com/liamappelbe/fftea/workflows/CI/badge.svg)](https://github.com/liamappelbe/fftea/actions?query=workflow%3ACI+branch%3Amain)
+
 A simple and efficient FFT implementation.
 
 Supports FFT of power-of-two sized arrays of real or complex numbers, using the
