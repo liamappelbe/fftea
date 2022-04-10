@@ -42,7 +42,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        sdk: [ 2.13.0, dev ]
+        sdk: [ 2.14.0, dev ]
     steps:
     - uses: dart-lang/setup-dart@v1.0
       with:
