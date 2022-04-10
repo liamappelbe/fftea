@@ -36,12 +36,13 @@ jobs:
       if: always() && steps.install.outcome == 'success'
     - run: dart analyze --fatal-infos
       if: always() && steps.install.outcome == 'success'
+
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        sdk: [ 2.12.0, dev ]
+        sdk: [ 2.13.0, dev ]
     steps:
     - uses: dart-lang/setup-dart@v1.0
       with:
@@ -59,3 +60,22 @@ jobs:
         key: ${{ runner.os }}-${{ matrix.sdk }}
     - run: dart pub upgrade
     - run: dart test
+
+  coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: dart-lang/setup-dart@v1.0
+        with:
+          sdk: dev
+      - id: install
+        name: Install dependencies
+        run: dart pub get
+      - name: Collect and report coverage
+        run: ./tool/test_and_collect.sh
+      - name: Upload coverage
+        uses: coverallsapp/github-action@v1.1.2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: var/lcov.info
