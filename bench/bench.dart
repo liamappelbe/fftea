@@ -35,6 +35,7 @@ class TestTimer {
 
   @override
   String toString() {
+    if (_runs == 0) return 'Skipped';
     final micros = _watch.elapsedMicroseconds / _runs;
     if (micros > 1e6) return '${(micros / 1e6).toStringAsFixed(2)} s';
     if (micros > 1e3) return '${(micros / 1e3).toStringAsFixed(2)} ms';
@@ -42,9 +43,10 @@ class TestTimer {
   }
 }
 
-const kTestRuns = 10;
+const kTestRuns = 30;
 
-bench(int size) {
+bench(int sizeLog2) {
+  final size = 1 << sizeLog2;
   final inp = Float64List(size);
   final rand = Random();
   for (var i = 0; i < size; ++i) {
@@ -72,13 +74,6 @@ bench(int size) {
       fftTimer.stop();
     }
 
-    // package:fft, cached
-    {
-      fftCachedTimer.start();
-      final o = fftFFTCached.Transform(inp);
-      fftCachedTimer.stop();
-    }
-
     // package:smart_signal_processing
     {
       smartTimer.start();
@@ -95,22 +90,26 @@ bench(int size) {
       smartInPlaceTimer.stop();
     }
 
-    // package:scidart
-    {
-      scidartTimer.start();
-      final cplx = numdart.ArrayComplex(List.from(inp.map(
-          (x) => numdart.Complex(real: x))));
-      final o = scidart.fft(cplx);
-      scidartTimer.stop();
-    }
+    // Scidart is too slow, so only do one run on the medium inputs, and don't
+    // run it on the larger inputs.
+    if (size < 3000 || (i == 0 && size < 100000)) {
+      // package:scidart
+      {
+        scidartTimer.start();
+        final cplx = numdart.ArrayComplex(List.from(inp.map(
+            (x) => numdart.Complex(real: x))));
+        final o = scidart.fft(cplx);
+        scidartTimer.stop();
+      }
 
-    // package:scidart, in-place
-    {
-      final cplx = numdart.ArrayComplex(List.from(inp.map(
-          (x) => numdart.Complex(real: x))));
-      scidartInPlaceTimer.start();
-      final o = scidart.fft(cplx);
-      scidartInPlaceTimer.stop();
+      // package:scidart, in-place
+      {
+        final cplx = numdart.ArrayComplex(List.from(inp.map(
+            (x) => numdart.Complex(real: x))));
+        scidartInPlaceTimer.start();
+        final o = scidart.fft(cplx);
+        scidartInPlaceTimer.stop();
+      }
     }
 
     // fftea
@@ -127,14 +126,6 @@ bench(int size) {
       ffteaCachedTimer.stop();
     }
 
-    // fftea, in-place
-    {
-      final cplxInp = fftea.ComplexArray.fromRealArray(inp);
-      ffteaInPlaceTimer.start();
-      fftea.FFT(size).inPlaceFft(cplxInp);
-      ffteaInPlaceTimer.stop();
-    }
-
     // fftea, in-place, cached
     {
       final cplxInp = fftea.ComplexArray.fromRealArray(inp);
@@ -144,24 +135,23 @@ bench(int size) {
     }
   }
 
-  print('| $size | $fftTimer | $fftCachedTimer | '
-      '$smartTimer | $smartInPlaceTimer | '
-      '$scidartTimer | $scidartInPlaceTimer | '
-      '$ffteaTimer | $ffteaCachedTimer | '
-      '$ffteaInPlaceTimer | $ffteaInPlaceCachedTimer |');
+  final sizeStr = sizeLog2 < 10 ? '$size' : '2^$sizeLog2';
+  print('| $sizeStr | $fftTimer | $smartTimer | $smartInPlaceTimer | '
+      '$scidartTimer | $scidartInPlaceTimer | $ffteaTimer | '
+      '$ffteaCachedTimer | $ffteaInPlaceCachedTimer |');
 }
 
 main() {
-  print(
-    '| Size | package:fft | package:fft, cached | smart | smart, in-place | '
-    'scidart | scidart, in-place* | fftea | fftea, cached | '
-     'fftea, in-place | fftea, in-place, cached |');
-  print('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+  print('| Size | package:fft | smart | smart, in-place | scidart | '
+      'scidart, in-place* | fftea | fftea, cached | fftea, in-place, cached |');
+  print('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
+  bench(4);
+  bench(6);
+  bench(8);
+  bench(10);
+  bench(12);
+  bench(14);
   bench(16);
-  bench(64);
-  bench(256);
-  bench(1024);
-  bench(4096);
-  bench(16384);
-  bench(65536);
+  bench(18);
+  bench(20);
 }

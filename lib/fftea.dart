@@ -58,12 +58,30 @@ class FFT {
       throw ArgumentError('FFT size must be a power of 2.', 'powerOf2Size');
     }
     if (powerOf2Size <= 1) return Float64List.fromList([1]);
+    if (powerOf2Size == 2) return Float64List.fromList([1, 0]);
+    if (powerOf2Size == 4) return Float64List.fromList([1, 0, 0, -1]);
     final twiddles = Float64List(powerOf2Size);
+    twiddles[0] = 1;
     final step = -math.pi / powerOf2Size;
-    for (int i = 0; i < powerOf2Size; i += 2) {
+    final half = powerOf2Size >> 1;
+    final quat = half >> 1;
+    for (int i = 2; i < quat; i += 2) {
       final theta = step * i;
       twiddles[i] = math.cos(theta);
       twiddles[i + 1] = math.sin(theta);
+    }
+    twiddles[quat] = math.sqrt1_2;
+    final quat_ = quat + 1;
+    twiddles[quat_] = -math.sqrt1_2;
+    for (int i = 2; i < quat; i += 2) {
+      twiddles[quat + i] = -twiddles[quat_ - i];
+      twiddles[quat_ + i] = -twiddles[quat - i];
+    }
+    final half_ = half + 1;
+    twiddles[half_] = -1;
+    for (int i = 2; i < half; i += 2) {
+      twiddles[half + i] = -twiddles[half - i];
+      twiddles[half_ + i] = twiddles[half_ - i];
     }
     return twiddles;
   }
