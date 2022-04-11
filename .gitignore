@@ -4,4 +4,5 @@
 .packages
 .pub-cache/
 .pub/
+build/
 pubspec.lock
