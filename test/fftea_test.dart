@@ -19,34 +19,29 @@ import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
 import 'package:test/test.dart';
 
+void expectClose(List<double> inp, List<double> exp) {
+  expect(inp.length, exp.length);
+  for (int i = 0; i < inp.length; ++i) {
+    expect(inp[i], closeTo(exp[i], 1e-6));
+  }
+}
+
 void testFft(List<double> inp, List<double> exp) {
   final buf = ComplexArray(Float64List.fromList(inp));
   final fft = FFT(buf.length)..inPlaceFft(buf);
   expect(buf.length, inp.length / 2);
-  expect(buf.array.length, exp.length);
-  for (int i = 0; i < buf.array.length; ++i) {
-    expect(buf.array[i], closeTo(exp[i], 1e-6));
-  }
+  expectClose(buf.array, exp);
   fft.inPlaceInverseFft(buf);
-  expect(buf.array.length, inp.length);
-  for (int i = 0; i < buf.array.length; ++i) {
-    expect(buf.array[i], closeTo(inp[i], 1e-6));
-  }
+  expectClose(buf.array, inp);
 }
 
 void testRealFft(List<double> inp, List<double> exp) {
   final fft = FFT(inp.length);
   final buf = fft.realFft(inp);
   expect(buf.length, inp.length);
-  expect(buf.array.length, exp.length);
-  for (int i = 0; i < buf.array.length; ++i) {
-    expect(buf.array[i], closeTo(exp[i], 1e-6));
-  }
+  expectClose(buf.array, exp);
   final a = fft.realInverseFft(buf);
-  expect(a.length, inp.length);
-  for (int i = 0; i < a.length; ++i) {
-    expect(a[i], closeTo(inp[i], 1e-6));
-  }
+  expectClose(a, inp);
 }
 
 void main() {
@@ -620,6 +615,48 @@ void main() {
         -65.09121628, 4.21527843, -2.23272122, 6.67390360, //
         34.29385312, -85.75109787, -71.55384516, -65.76298421, //
         -84.38854613, 8.72415382, -51.05891124, -7.16722431,
+      ],
+    );
+  });
+
+  test('Window apply', () {
+    final w = Window.hamming(16);
+    final a = [
+        2.40234493, -5.37519948, 5.87913901, 5.56368650, //
+        0.36230529, -6.60591231, 1.84858250, 7.40580017, //
+        -9.06995136, -3.37316816, -7.49054873, -0.08133106, //
+        8.21878413, 4.01863861, -6.27781753, 3.26244761,
+      ];
+    expectClose(
+      w.applyReal(Float64List.fromList(a)),
+      [
+        0.19218759, -0.64378275, 1.36513561, 2.21352482, //
+        0.21306561, -5.08655248, 1.68618049, 7.33135629, //
+        -8.97877926, -3.07682797, -5.76772252, -0.04782942, //
+        3.26986121, 0.93312757, -0.75188849, 0.26099581,
+      ],
+    );
+    final b = [
+        9.44846264, 1.95087338, 5.52869244, 1.69072704, //
+        5.67748601, -0.82088842, -0.82156391, 4.19727069, //
+        -2.43961454, -7.24492746, 6.51623365, -0.43265635, //
+        -6.73371846, 3.59483400, 7.40012619, 8.54449032, //
+        2.85103823, 0.37408665, -8.94448999, -7.48472773, //
+        0.98801289, 7.20755895, -1.38399236, 0.33909182, //
+        -5.15080380, 4.75267700, 5.88344492, -8.03406905, //
+        -3.95549967, -0.54484360, 1.94648681, 5.86197557,
+      ];
+    expectClose(
+      w.apply(ComplexArray(Float64List.fromList(b))).array,
+      [
+        0.75587701, 0.15606987, 0.66216646, 0.20249684, //
+        1.31831180, -0.19061023, -0.32686099, 1.66989331, //
+        -1.43469606, -4.26061935, 5.01749991, -0.33314539, //
+        -6.14214660, 3.27901999, 7.32573935, 8.45860022, //
+        2.82237930, 0.37032629, -8.15869702, -6.82717806, //
+        0.76076993, 5.54982040, -0.81390251, 0.19941417, //
+        -2.04925853, 1.89086292, 1.36613545, -1.86551020, //
+        -0.47374659, -0.06525542, 0.15571894, 0.46895805,
       ],
     );
   });

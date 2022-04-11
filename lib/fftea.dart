@@ -17,13 +17,10 @@ import 'dart:typed_data';
 
 bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
 
-/// A thin wrapper around a Float64List, representing a flat list of complex
-/// numbers.
+/// A wrapper around a Float64List, representing a flat list of complex numbers.
 ///
 /// The values in the array alternate between real and complex components:
 /// `[real0, imag0, real1, imag1, ...]`
-///
-/// This wrapper exists mainly for documentation and type safety purposes.
 class ComplexArray {
   final Float64List _a;
 
@@ -261,5 +258,125 @@ class FFT {
       r[i] = a[len - (i << 1)] / scale;
     }
     return r;
+  }
+}
+
+/// A wrapper around a Float64List, representing a windowing function.
+class Window {
+  final Float64List _a;
+  Window._(this._a);
+
+  /// Length of the Window.
+  int get length => _a.length;
+
+  /// Returns the underlying array.
+  Float64List get array => _a;
+
+  /// Applies the window to the [complexArray].
+  ///
+  /// This method modifies the input array, rather than allocating a new array.
+  void inlineApply(ComplexArray complexArray) {
+    if (complexArray.length != length) {
+      throw ArgumentError('Input data is the wrong length.', 'complexArray');
+    }
+    final a = complexArray.array;
+    for (int i = 0; i < a.length; ++i) {
+      a[i] *= _a[i >> 1];
+    }
+  }
+
+  /// Applies the window to the [complexArray].
+  ///
+  /// Does not modify the input array. Allocates and returns a new array.
+  ComplexArray apply(ComplexArray complexArray) {
+    final c = complexArray.copy();
+    inlineApply(c);
+    return c;
+  }
+
+  /// Applies the window to the [realArray].
+  ///
+  /// This method modifies the input array, rather than allocating a new array.
+  void inlineApplyReal(Float64List realArray) {
+    final a = realArray;
+    if (a.length != length) {
+      throw ArgumentError('Input data is the wrong length.', 'realArray');
+    }
+    for (int i = 0; i < a.length; ++i) {
+      a[i] *= _a[i];
+    }
+  }
+
+  /// Applies the window to the [realArray].
+  ///
+  /// Does not modify the input array. Allocates and returns a new array.
+  Float64List applyReal(Float64List realArray) {
+    final c = Float64List.fromList(realArray);
+    inlineApplyReal(c);
+    return c;
+  }
+
+  /// Returns a cosine window, such as Hanning or Hamming.
+  ///
+  /// `w[i] = 1 - amp - amp * cos(2πi / (size - 1))`
+  static Window cosine(int size, double amplitude) {
+    final a = Float64List(size);
+    final half = size >> 1;
+    final size_ = size - 1;
+    final offset = 1 - amplitude;
+    final scale = 2 * math.pi / (size - 1);
+    for (int i = 0; i <= half; ++i) {
+      final y = offset - amplitude * math.cos(scale * i);
+      a[i] = y;
+      a[size_ - i] = y;
+    }
+    return Window._(a);
+  }
+
+  /// Returns a Hanning window.
+  ///
+  /// This is a kind of cosine window.
+  /// `w[i] = 0.5 - 0.5 * cos(2πi / (size - 1))`
+  static Window hanning(int size) => cosine(size, 0.5);
+
+  /// Returns a Hamming window.
+  ///
+  /// This is a kind of cosine window.
+  /// `w[i] = 0.54 - 0.46 * cos(2πi / (size - 1))`
+  static Window hamming(int size) => cosine(size, 0.46);
+
+  /// Returns a Bartlett window.
+  ///
+  /// This is essentially just a triangular window.
+  /// `w[i] = 1 - |2i / (size - 1) - 1|`
+  static Window bartlett(int size) {
+    final a = Float64List(size);
+    final half = size >> 1;
+    final size_ = size - 1;
+    final offset = size_ / 2;
+    for (int i = 0; i <= half; ++i) {
+      final y = 1 - (i / offset - 1).abs();
+      a[i] = y;
+      a[size_ - i] = y;
+    }
+    return Window._(a);
+  }
+
+  /// Returns a Blackman window.
+  ///
+  /// This is a more elaborate kind of cosine window.
+  /// `w[i] = 0.42 - 0.5 * cos(2πi / (size - 1)) + 0.08 * cos(4πi / (size - 1))`
+  static Window blackman(int size) {
+    final a = Float64List(size);
+    final half = size >> 1;
+    final size_ = size - 1;
+    final scale = 2 * math.pi / size_;
+    for (int i = 0; i <= half; ++i) {
+      final t = i * scale;
+      final y = 0.42 - 0.5 * math.cos(t) + 0.08 * math.cos(2 * t);
+      a[i] = y;
+      a[size_ - i] = y;
+    }
+    return Window._(a);
   }
 }
