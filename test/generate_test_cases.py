@@ -117,4 +117,27 @@ def makeWindowApplyCase(n):
 
 print("  test('Window apply', () {")
 makeWindowApplyCase(16)
-print('  });')
+print('  });\n')
+
+def makeStftCase(n, pn, nc, cs):
+  a = [randReal(10) if i < n else 0 for i in range(pn)]
+  w = numpy.hanning(nc)
+  b = []
+  i = 0
+  while (i + nc) <= len(a):
+    b.append(numpy.fft.fft(a[i:(i+nc)] * w))
+    i += cs
+  print('    testStft(')
+  print('      %s,' % nc)
+  print('      %s,' % cs)
+  print('      [%s],' % realBufStr(a[:n]))
+  print('      [')
+  for c in b:
+    print('      [%s],' % cplxBufStr(c))
+  print('      ],')
+  print('    );')
+
+print("  test('STFT', () {")
+makeStftCase(128, 128, 16, 8)
+makeStftCase(47, 51, 16, 5)
+print('  });\n')

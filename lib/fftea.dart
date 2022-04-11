@@ -93,7 +93,9 @@ class ComplexArray {
   }
 }
 
-/// Performs FFTs of a particular power-of-2 size.
+/// Performs FFTs (Fast Fourier Transforms) of a particular size.
+///
+/// The size must be a power of two, eg 1, 2, 4, 8, 16 etc.
 class FFT {
   final Float64List _twiddles;
 
@@ -275,7 +277,7 @@ class Window {
   /// Applies the window to the [complexArray].
   ///
   /// This method modifies the input array, rather than allocating a new array.
-  void inlineApply(ComplexArray complexArray) {
+  void inPlaceApply(ComplexArray complexArray) {
     if (complexArray.length != length) {
       throw ArgumentError('Input data is the wrong length.', 'complexArray');
     }
@@ -290,14 +292,14 @@ class Window {
   /// Does not modify the input array. Allocates and returns a new array.
   ComplexArray apply(ComplexArray complexArray) {
     final c = complexArray.copy();
-    inlineApply(c);
+    inPlaceApply(c);
     return c;
   }
 
   /// Applies the window to the [realArray].
   ///
   /// This method modifies the input array, rather than allocating a new array.
-  void inlineApplyReal(Float64List realArray) {
+  void inPlaceApplyReal(List<double> realArray) {
     final a = realArray;
     if (a.length != length) {
       throw ArgumentError('Input data is the wrong length.', 'realArray');
@@ -310,9 +312,9 @@ class Window {
   /// Applies the window to the [realArray].
   ///
   /// Does not modify the input array. Allocates and returns a new array.
-  Float64List applyReal(Float64List realArray) {
+  Float64List applyReal(List<double> realArray) {
     final c = Float64List.fromList(realArray);
-    inlineApplyReal(c);
+    inPlaceApplyReal(c);
     return c;
   }
 
@@ -378,5 +380,91 @@ class Window {
       a[size_ - i] = y;
     }
     return Window._(a);
+  }
+}
+
+/// Performs STFTs (Short-time Fourier Transforms).
+///
+/// STFT breaks up the input into overlapping chunks, applies an optional
+/// window, and runs an FFT. This is also known as a spectrogram.
+///
+/// The chunk size must be a power of two, eg 1, 2, 4, 8, 16 etc.
+class STFT {
+  final FFT _fft;
+  final Window? _win;
+
+  STFT(int powerOf2ChunkSize, [this._win]) : _fft = FFT(powerOf2ChunkSize) {
+    if (_win != null && _win!.length != powerOf2ChunkSize) {
+      throw ArgumentError(
+        'Window must have the same length as the chunk size.',
+        '_win',
+      );
+    }
+  }
+
+  /// Runs STFT on [input].
+  ///
+  /// The input is broken up into chunks, windowed, FFT'd, and then passed to
+  /// [reportChunk]. If there isn't enough data in the input to fill the final
+  /// chunk, it is padded with zeros.
+  ///
+  /// When using a windowing function, it is recommended that you overlap the
+  /// chunks by setting [chunkStride] to less than the chunk size. Once one
+  /// chunk has been processed, the window advances by the stride. If no stride
+  /// is given, it defaults to the chunk size.
+  ///
+  /// WARNING: For efficiency reasons, the same ComplexArray is reused for every
+  /// chunk, always overwriting the FFT of the previous chunk. So if reportChunk
+  /// needs to keep the data, it should make a copy using `result.copy()`.
+  void run(
+    List<double> input,
+    Function(ComplexArray) reportChunk, [
+    int chunkStride = 0,
+  ]) {
+    final chunkSize = _fft.size;
+    if (chunkStride <= 0) chunkStride = chunkSize;
+    final chunk = ComplexArray(Float64List(2 * chunkSize));
+    final a = chunk.array;
+    final w = _win?._a;
+    for (int i = 0;; i += chunkStride) {
+      final i2 = i + chunkSize;
+      if (i2 > input.length) {
+        int j = 0;
+        final stop = (input.length - i) << 1;
+        for (; j < stop; j += 2) {
+          a[j] = input[i + (j >> 1)];
+          a[j + 1] = 0;
+        }
+        for (; j < a.length; ++j) {
+          a[j] = 0;
+        }
+      } else {
+        for (int j = 0; j < a.length; j += 2) {
+          a[j] = input[i + (j >> 1)];
+          a[j + 1] = 0;
+        }
+      }
+      if (w != null) {
+        for (int j = 0; j < a.length; j += 2) {
+          a[j] *= w[j >> 1];
+        }
+      }
+      _fft.inPlaceFft(chunk);
+      reportChunk(chunk);
+      if (i2 >= input.length) {
+        break;
+      }
+    }
+  }
+
+  /// Runs STFT on [input].
+  ///
+  /// This method is the same as [run], except that it copies all the results to
+  /// a list. It's a convinience method, but isn't as efficient as run. See the
+  /// run method docs for more details.
+  List<ComplexArray> runAndCopy(List<double> input, [int chunkStride = 0]) {
+    final out = <ComplexArray>[];
+    run(input, (ComplexArray result) => out.add(result.copy()), chunkStride);
+    return out;
   }
 }
