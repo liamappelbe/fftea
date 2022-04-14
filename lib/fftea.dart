@@ -91,6 +91,22 @@ class ComplexArray {
     }
     return m;
   }
+
+  /// Discards redundant conjugate terms, assuming this is the result of a real
+  /// valued FFT. This method does not check whether those terms are actualy
+  /// redundant conjugate values.
+  ///
+  /// The result of a real valued FFT is about half redundant data, so the list
+  /// returned by this function omits that data:
+  /// [sum term, ...terms..., nyquist term, ...conjugate terms...]
+  ///  ^----- These terms are kept ------^     ^- Discarded -^
+  ///
+  /// This method returns a new array (which is a view into the same data). It
+  /// does not modify this array.
+  ComplexArray discardConjugates() {
+    final len = ((length >> 1) + 1) << 1;
+    return ComplexArray(Float64List.sublistView(_a, 0, len));
+  }
 }
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.

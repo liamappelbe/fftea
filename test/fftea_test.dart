@@ -19,6 +19,10 @@ import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
 import 'package:test/test.dart';
 
+ComplexArray makeArray(List<double> values) {
+  return ComplexArray(Float64List.fromList(values));
+}
+
 void expectClose(List<double> inp, List<double> exp) {
   expect(inp.length, exp.length);
   for (int i = 0; i < inp.length; ++i) {
@@ -27,7 +31,7 @@ void expectClose(List<double> inp, List<double> exp) {
 }
 
 void testFft(List<double> inp, List<double> exp) {
-  final buf = ComplexArray(Float64List.fromList(inp));
+  final buf = makeArray(inp);
   final fft = FFT(buf.length)..inPlaceFft(buf);
   expect(buf.length, inp.length / 2);
   expectClose(buf.array, exp);
@@ -60,9 +64,7 @@ void testStft(
 
 void main() {
   test('ComplexArray', () {
-    final a = ComplexArray(
-      Float64List.fromList([-4.24926712, 0.43567775, 2.51713706, -7.76003700]),
-    );
+    final a = makeArray([-4.24926712, 0.43567775, 2.51713706, -7.76003700]);
     expect(a.length, 2);
     expect(a.array.length, 4);
 
@@ -98,6 +100,25 @@ void main() {
     expect(real.length, 2);
     expect(real[0], -4.24926712);
     expect(real[1], 2.51713706);
+
+    expect(
+      makeArray([1, 2]).discardConjugates().array,
+      [1, 2],
+    );
+    expect(
+      makeArray([1, 2, 3, 4]).discardConjugates().array,
+      [1, 2, 3, 4],
+    );
+    expect(
+      makeArray([1, 2, 3, 4, 5, 6, 7, 8]).discardConjugates().array,
+      [1, 2, 3, 4, 5, 6],
+    );
+    expect(
+      makeArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+          .discardConjugates()
+          .array,
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    );
   });
 
   test('FFT', () {
