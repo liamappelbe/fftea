@@ -19,8 +19,9 @@ import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
 import 'package:test/test.dart';
 
+Float64List toFloatList(ComplexArray a) => Float64List.sublistView(a.array);
 ComplexArray makeArray(List<double> values) {
-  return ComplexArray(Float64List.fromList(values));
+  return ComplexArray(Float64x2List.sublistView(Float64List.fromList(values)));
 }
 
 void expectClose(List<double> inp, List<double> exp) {
@@ -34,16 +35,16 @@ void testFft(List<double> inp, List<double> exp) {
   final buf = makeArray(inp);
   final fft = FFT(buf.length)..inPlaceFft(buf);
   expect(buf.length, inp.length / 2);
-  expectClose(buf.array, exp);
+  expectClose(toFloatList(buf), exp);
   fft.inPlaceInverseFft(buf);
-  expectClose(buf.array, inp);
+  expectClose(toFloatList(buf), inp);
 }
 
 void testRealFft(List<double> inp, List<double> exp) {
   final fft = FFT(inp.length);
   final buf = fft.realFft(inp);
   expect(buf.length, inp.length);
-  expectClose(buf.array, exp);
+  expectClose(toFloatList(buf), exp);
   final a = fft.realInverseFft(buf);
   expectClose(a, inp);
 }
@@ -58,7 +59,7 @@ void testStft(
   final result = stft.runAndCopy(inp, chunkStride);
   expect(result.length, exp.length);
   for (int i = 0; i < result.length; ++i) {
-    expectClose(result[i].array, exp[i]);
+    expectClose(toFloatList(result[i]), exp[i]);
   }
 }
 
@@ -66,25 +67,25 @@ void main() {
   test('ComplexArray', () {
     final a = makeArray([-4.24926712, 0.43567775, 2.51713706, -7.76003700]);
     expect(a.length, 2);
-    expect(a.array.length, 4);
+    expect(a.array.length, 2);
 
     final b = a.copy();
     expect(b.length, 2);
-    expect(b.array.length, 4);
-    expect(b.array[0], a.array[0]);
-    expect(b.array[1], a.array[1]);
-    expect(b.array[2], a.array[2]);
-    expect(b.array[3], a.array[3]);
-    b.array[1] = 12345;
+    expect(b.array.length, 2);
+    expect(b.array[0].x, a.array[0].x);
+    expect(b.array[0].y, a.array[0].y);
+    expect(b.array[1].x, a.array[1].x);
+    expect(b.array[1].y, a.array[1].y);
+    b.array[1] = Float64x2(123, 456);
     expect(b.array[1], isNot(a.array[1]));
 
     final c = ComplexArray.fromRealArray([123, 456]);
     expect(c.length, 2);
-    expect(c.array.length, 4);
-    expect(c.array[0], 123);
-    expect(c.array[1], 0);
-    expect(c.array[2], 456);
-    expect(c.array[3], 0);
+    expect(c.array.length, 2);
+    expect(c.array[0].x, 123);
+    expect(c.array[0].y, 0);
+    expect(c.array[1].x, 456);
+    expect(c.array[1].y, 0);
 
     final sqmag = a.squareMagnitudes();
     expect(sqmag.length, 2);
@@ -102,21 +103,22 @@ void main() {
     expect(real[1], 2.51713706);
 
     expect(
-      makeArray([1, 2]).discardConjugates().array,
+      toFloatList(makeArray([1, 2]).discardConjugates()),
       [1, 2],
     );
     expect(
-      makeArray([1, 2, 3, 4]).discardConjugates().array,
+      toFloatList(makeArray([1, 2, 3, 4]).discardConjugates()),
       [1, 2, 3, 4],
     );
     expect(
-      makeArray([1, 2, 3, 4, 5, 6, 7, 8]).discardConjugates().array,
+      toFloatList(makeArray([1, 2, 3, 4, 5, 6, 7, 8]).discardConjugates()),
       [1, 2, 3, 4, 5, 6],
     );
     expect(
-      makeArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
-          .discardConjugates()
-          .array,
+      toFloatList(
+        makeArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+            .discardConjugates(),
+      ),
       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     );
   });
@@ -682,7 +684,7 @@ void main() {
       -3.95549967, -0.54484360, 1.94648681, 5.86197557,
     ];
     expectClose(
-      w.apply(ComplexArray(Float64List.fromList(b))).array,
+      toFloatList(w.apply(makeArray(b))),
       [
         0.75587701, 0.15606987, 0.66216646, 0.20249684, //
         1.31831180, -0.19061023, -0.32686099, 1.66989331, //

@@ -14,13 +14,13 @@ improvements that make this implementation more efficient:
 
 - The main FFT class is constructed with a given size, so that the twiddle
   factors only have to be calculated once. This is particularly handy for STFT.
-- Doesn't use a wrapper class for complex numbers, just uses an array of doubles
-  with elements alternating: `[real0, imag0, real1, imag1...]`. Every little
-  wrapper class is a seperate allocation and dereference. For inner loop code,
-  like FFT's complex number math, this makes a big difference.
+- Doesn't use a wrapper class for complex numbers, just uses a Float64x2List.
+  Every little wrapper class is a seperate allocation and dereference. For inner
+  loop code, like FFT's complex number math, this makes a big difference.
+  Float64x2 can also take advantage of SIMD optimisations.
 - FFT algorithm is in-place, so no additional arrays are allocated.
 - Loop based FFT, rather than recursive.
-- Using trig tricks to only calculate a quarter of the twiddle factors.
+- Using trigonometric tricks to only calculate a quarter of the twiddle factors.
 
 ## Usage
 
@@ -49,19 +49,19 @@ other libraries, where appropriate.
 In the table below, "cached" means the construction of the FFT object is not
 included in the benchmark time. And "in-place" means using the in-place FFT, and
 the conversion and copying of the input data into whatever format the FFT wants
-is not included in the benchmark.
+is not included in the benchmark. Run in Ubuntu on a Dell XPS 13.
 
 | Size | package:fft | smart | smart, in-place | scidart | scidart, in-place* | fftea | fftea, cached | fftea, in-place, cached |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 16 | 497.2 us | 26.8 us | 6.7 us | 445.9 us | 117.5 us | 22.0 us | 3.5 us | 3.0 us |
-| 64 | 439.2 us | 2.5 us | 1.9 us | 255.3 us | 174.4 us | 32.4 us | 29.0 us | 20.9 us |
-| 256 | 307.2 us | 7.3 us | 6.2 us | 594.3 us | 573.1 us | 10.4 us | 4.3 us | 3.7 us |
-| 2^10 | 1.13 ms | 27.9 us | 25.2 us | 6.37 ms | 6.29 ms | 26.1 us | 19.8 us | 17.7 us |
-| 2^12 | 5.23 ms | 114.4 us | 107.8 us | 94.11 ms | 92.03 ms | 99.6 us | 89.3 us | 82.0 us |
-| 2^14 | 27.98 ms | 635.4 us | 527.7 us | 1.47 s | 1.47 s | 498.5 us | 464.9 us | 391.0 us |
-| 2^16 | 151.57 ms | 3.47 ms | 2.98 ms | 29.96 s | 29.84 s | 2.37 ms | 2.15 ms | 1.90 ms |
-| 2^18 | 786.77 ms | 17.12 ms | 22.59 ms | Skipped | Skipped | 12.38 ms | 10.78 ms | 9.05 ms |
-| 2^20 | 4.39 s | 99.34 ms | 74.18 ms | Skipped | Skipped | 55.19 ms | 51.97 ms | 48.79 ms |
+| 16 | 410.6 us | 28.3 us | 8.3 us | 347.2 us | 164.0 us | 42.2 us | 11.6 us | 10.9 us |
+| 64 | 416.4 us | 8.2 us | 2.7 us | 169.0 us | 194.0 us | 73.5 us | 41.6 us | 41.8 us |
+| 256 | 470.6 us | 14.0 us | 11.0 us | 904.9 us | 812.8 us | 34.1 us | 8.4 us | 6.1 us |
+| 2^10 | 1.54 ms | 47.2 us | 44.1 us | 8.28 ms | 8.26 ms | 36.3 us | 30.5 us | 27.3 us |
+| 2^12 | 7.65 ms | 206.1 us | 197.3 us | 132.99 ms | 121.27 ms | 159.2 us | 143.9 us | 129.3 us |
+| 2^14 | 39.83 ms | 940.1 us | 899.4 us | 1.96 s | 1.96 s | 750.1 us | 695.5 us | 590.2 us |
+| 2^16 | 261.38 ms | 6.04 ms | 5.62 ms | 41.44 s | 41.60 s | 4.71 ms | 5.89 ms | 3.56 ms |
+| 2^18 | 1.31 s | 27.65 ms | 27.84 ms | Skipped | Skipped | 20.80 ms | 24.92 ms | 15.66 ms |
+| 2^20 | 7.29 s | 168.84 ms | 151.12 ms | Skipped | Skipped | 119.93 ms | 106.00 ms | 88.26 ms |
 
 In practice, you usually know how big your FFT is ahead of time, so it's pretty
 easy to construct your FFT object once, to take advantage of the caching. It's

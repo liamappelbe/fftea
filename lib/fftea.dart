@@ -17,53 +17,42 @@ import 'dart:typed_data';
 
 bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
 
-/// A wrapper around a Float64List, representing a flat list of complex numbers.
-///
-/// The values in the array alternate between real and complex components:
-/// `[real0, imag0, real1, imag1, ...]`
+/// A wrapper around a Float64x2List, representing a list of complex numbers.
 class ComplexArray {
-  final Float64List _a;
+  final Float64x2List _a;
 
-  /// Constructs a ComplexArray from a Float64List.
-  ///
-  /// The given Float64List must be in the correct format. The values must
-  /// alternate between real and complex components:
-  /// `[real0, imag0, real1, imag1, ...]`
+  /// Constructs a ComplexArray from a Float64x2List.
   ComplexArray(this._a);
 
   /// Length of the ComplexArray.
-  ///
-  /// That is, the number of (real, imag) pairs in the array.
-  int get length => _a.length ~/ 2;
+  int get length => _a.length;
 
   /// Returns the underlying array.
-  ///
-  /// The values in the array alternate between real and complex components:
-  /// `[real0, imag0, real1, imag1, ...]`
-  Float64List get array => _a;
+  Float64x2List get array => _a;
 
   /// Returns a copy of this ComplexArray.
   ///
   /// The underlying array is copied, so modifications to the returned
   /// ComplexArray will not affect this one.
-  ComplexArray copy() => ComplexArray(Float64List.fromList(_a));
+  ComplexArray copy() => ComplexArray(Float64x2List.fromList(_a));
 
   /// Converts a real array to a ComplexArray.
   static ComplexArray fromRealArray(List<double> reals) {
-    final a = Float64List(reals.length << 1);
+    final a = Float64x2List(reals.length);
     for (int i = 0; i < reals.length; ++i) {
-      a[i << 1] = reals[i];
+      a[i] = Float64x2(reals[i], 0);
     }
     return ComplexArray(a);
   }
 
   /// Returns the real components of the ComplexArray.
   ///
-  /// This method just discards the imaginary components.
+  /// This method just discards the imaginary components. It doesn't check
+  /// whether the imaginary components are actually close to zero.
   Float64List toRealArray() {
     final r = Float64List(length);
     for (int i = 0; i < r.length; ++i) {
-      r[i] = _a[i << 1];
+      r[i] = _a[i].x;
     }
     return r;
   }
@@ -75,10 +64,8 @@ class ComplexArray {
   Float64List squareMagnitudes() {
     final m = Float64List(length);
     for (int i = 0; i < m.length; ++i) {
-      final j = i << 1;
-      final x = _a[j];
-      final y = _a[j + 1];
-      m[i] = x * x + y * y;
+      final z = _a[i];
+      m[i] = z.x * z.x + z.y * z.y;
     }
     return m;
   }
@@ -104,8 +91,8 @@ class ComplexArray {
   /// This method returns a new array (which is a view into the same data). It
   /// does not modify this array.
   ComplexArray discardConjugates() {
-    final len = ((length >> 1) + 1) << 1;
-    return ComplexArray(Float64List.sublistView(_a, 0, len));
+    final len = (length >> 1) + 1;
+    return ComplexArray(Float64x2List.sublistView(_a, 0, len));
   }
 }
 
@@ -113,45 +100,44 @@ class ComplexArray {
 ///
 /// The size must be a power of two, eg 1, 2, 4, 8, 16 etc.
 class FFT {
-  final Float64List _twiddles;
+  final Float64x2List _twiddles;
+  final int _size;
 
-  FFT(int powerOf2Size) : _twiddles = _calculateTwiddles(powerOf2Size);
+  FFT(int powerOf2Size)
+      : _twiddles = _calculateTwiddles(powerOf2Size),
+        _size = powerOf2Size;
 
   /// The size of the FFTs that this class can do.
-  ///
-  /// Real valued input arrays should have this many elements. Complex numbered
-  /// input arrays should have twice as many elements.
-  int get size => _twiddles.length;
+  int get size => _size;
 
-  static Float64List _calculateTwiddles(int powerOf2Size) {
+  static Float64x2List _calculateTwiddles(int powerOf2Size) {
     if (!isPowerOf2(powerOf2Size)) {
       throw ArgumentError('FFT size must be a power of 2.', 'powerOf2Size');
     }
-    if (powerOf2Size <= 1) return Float64List.fromList([1]);
-    if (powerOf2Size == 2) return Float64List.fromList([1, 0]);
-    if (powerOf2Size == 4) return Float64List.fromList([1, 0, 0, -1]);
-    final twiddles = Float64List(powerOf2Size);
-    twiddles[0] = 1;
-    final step = -math.pi / powerOf2Size;
+    if (powerOf2Size <= 1) return Float64x2List.fromList([]);
+    if (powerOf2Size == 2) return Float64x2List.fromList([Float64x2(1, 0)]);
+    if (powerOf2Size == 4) {
+      return Float64x2List.fromList([Float64x2(1, 0), Float64x2(0, 1)]);
+    }
     final half = powerOf2Size >> 1;
-    final quat = half >> 1;
-    for (int i = 2; i < quat; i += 2) {
+    final twiddles = Float64x2List(half);
+    twiddles[0] = Float64x2(1, 0);
+    final step = 2 * math.pi / powerOf2Size;
+    final quarter = half >> 1;
+    final eighth = quarter >> 1;
+    for (int i = 1; i < eighth; ++i) {
       final theta = step * i;
-      twiddles[i] = math.cos(theta);
-      twiddles[i + 1] = math.sin(theta);
+      twiddles[i] = Float64x2(math.cos(theta), math.sin(theta));
     }
-    twiddles[quat] = math.sqrt1_2;
-    final quat_ = quat + 1;
-    twiddles[quat_] = -math.sqrt1_2;
-    for (int i = 2; i < quat; i += 2) {
-      twiddles[quat + i] = -twiddles[quat_ - i];
-      twiddles[quat_ + i] = -twiddles[quat - i];
+    twiddles[eighth] = Float64x2(math.sqrt1_2, math.sqrt1_2);
+    for (int i = 1; i < eighth; ++i) {
+      final z = -twiddles[eighth - i];
+      twiddles[eighth + i] = Float64x2(-z.y, -z.x);
     }
-    final half_ = half + 1;
-    twiddles[half_] = -1;
-    for (int i = 2; i < half; i += 2) {
-      twiddles[half + i] = -twiddles[half - i];
-      twiddles[half_ + i] = twiddles[half_ - i];
+    twiddles[quarter] = Float64x2(0, 1);
+    for (int i = 1; i < quarter; ++i) {
+      final z = twiddles[quarter - i];
+      twiddles[quarter + i] = Float64x2(-z.x, z.y);
     }
     return twiddles;
   }
@@ -166,54 +152,44 @@ class FFT {
   /// for you.
   void inPlaceFft(ComplexArray complexArray) {
     final a = complexArray._a;
-    final n = _twiddles.length;
-    final n2 = n << 1;
-    if (a.length != n2) {
+    final n = _size;
+    if (a.length != n) {
       throw ArgumentError('Input data is the wrong length.', 'complexArray');
     }
+    // Bit reverse permutation.
+    final n2 = n >> 1;
     for (int i = 0; i < n; ++i) {
+      // Calculate bit reversal.
       int j = 0;
-      for (int nn = n >> 1, ii = i; nn > 0; nn >>= 1, ii >>= 1) {
+      for (int nn = n2, ii = i; nn > 0; nn >>= 1, ii >>= 1) {
         j = (j << 1) | (ii & 1);
       }
+      // Permute.
       if (j < i) {
-        final ir = i << 1;
-        final jr = j << 1;
-        final tr = a[ir];
-        a[ir] = a[jr];
-        a[jr] = tr;
-        final ii = ir + 1;
-        final ji = jr + 1;
-        final ti = a[ii];
-        a[ii] = a[ji];
-        a[ji] = ti;
+        final temp = a[i];
+        a[i] = a[j];
+        a[j] = temp;
       }
     }
+    // FFT main loop.
     for (int m = 1; m < n;) {
-      final m2 = m << 1;
-      final nm = n ~/ m;
-      for (int k = 0, t = 0; k < n2;) {
-        final km = k + m2;
-        final pr = a[k];
-        final pi = a[k + 1];
-        final or = a[km];
-        final oi = a[km + 1];
-        final wr = _twiddles[t];
-        final wi = _twiddles[t + 1];
-        final qr = or * wr - oi * wi;
-        final qi = oi * wr + or * wi;
-        a[k] = pr + qr;
-        a[k + 1] = pi + qi;
-        a[km] = pr - qr;
-        a[km + 1] = pi - qi;
-        k += 2;
+      final nm = n2 ~/ m;
+      for (int k = 0, t = 0; k < n;) {
+        final km = k + m;
+        final p = a[k];
+        final o = a[km];
+        final w = _twiddles[t];
+        final q = o.scale(w.x) + Float64x2(o.y, -o.x).scale(w.y);
+        a[k] = p + q;
+        a[km] = p - q;
+        ++k;
         t += nm;
-        if (t >= n) {
-          k += m2;
+        if (t >= n2) {
+          k += m;
           t = 0;
         }
       }
-      m = m2;
+      m <<= 1;
     }
   }
 
@@ -236,23 +212,16 @@ class FFT {
     final a = complexArray.array;
     final len = a.length;
     final half = len >> 1;
-    final scale = half.toDouble();
+    final scale = Float64x2.splat(len.toDouble());
     a[0] /= scale;
-    a[1] /= scale;
-    if (len <= 2) return;
-    for (int i = 2; i < half; i += 2) {
-      final ii = i + 1;
-      final jr = len - i;
-      final ji = jr + 1;
-      final tr = a[jr] / scale;
-      final ti = a[ji] / scale;
-      a[jr] = a[i] / scale;
-      a[ji] = a[ii] / scale;
-      a[i] = tr;
-      a[ii] = ti;
+    if (len <= 1) return;
+    for (int i = 1; i < half; ++i) {
+      final j = len - i;
+      final temp = a[j];
+      a[j] = a[i] / scale;
+      a[i] = temp / scale;
     }
     a[half] /= scale;
-    a[half + 1] /= scale;
   }
 
   /// Real-valued inverse FFT.
@@ -267,13 +236,12 @@ class FFT {
     inPlaceFft(complexArray);
     final a = complexArray.array;
     final len = a.length;
-    final half = len >> 1;
-    final scale = half.toDouble();
-    final r = Float64List(half);
-    r[0] = a[0] / scale;
-    if (len <= 2) return r;
-    for (int i = 1; i < half; ++i) {
-      r[i] = a[len - (i << 1)] / scale;
+    final scale = len.toDouble();
+    final r = Float64List(len);
+    r[0] = a[0].x / scale;
+    if (len <= 1) return r;
+    for (int i = 1; i < len; ++i) {
+      r[i] = a[len - i].x / scale;
     }
     return r;
   }
@@ -299,7 +267,7 @@ class Window {
     }
     final a = complexArray.array;
     for (int i = 0; i < a.length; ++i) {
-      a[i] *= _a[i >> 1];
+      a[i] = a[i].scale(_a[i]);
     }
   }
 
@@ -408,8 +376,11 @@ class Window {
 class STFT {
   final FFT _fft;
   final Window? _win;
+  final ComplexArray _chunk;
 
-  STFT(int powerOf2ChunkSize, [this._win]) : _fft = FFT(powerOf2ChunkSize) {
+  STFT(int powerOf2ChunkSize, [this._win])
+      : _fft = FFT(powerOf2ChunkSize),
+        _chunk = ComplexArray(Float64x2List(powerOf2ChunkSize)) {
     if (_win != null && _win!.length != powerOf2ChunkSize) {
       throw ArgumentError(
         'Window must have the same length as the chunk size.',
@@ -439,34 +410,26 @@ class STFT {
   ]) {
     final chunkSize = _fft.size;
     if (chunkStride <= 0) chunkStride = chunkSize;
-    final chunk = ComplexArray(Float64List(2 * chunkSize));
-    final a = chunk.array;
-    final w = _win?._a;
+    final a = _chunk.array;
     for (int i = 0;; i += chunkStride) {
       final i2 = i + chunkSize;
       if (i2 > input.length) {
         int j = 0;
-        final stop = (input.length - i) << 1;
-        for (; j < stop; j += 2) {
-          a[j] = input[i + (j >> 1)];
-          a[j + 1] = 0;
+        final stop = input.length - i;
+        for (; j < stop; ++j) {
+          a[j] = Float64x2(input[i + j], 0);
         }
-        for (; j < a.length; ++j) {
-          a[j] = 0;
+        for (; j < chunkSize; ++j) {
+          a[j] = Float64x2.zero();
         }
       } else {
-        for (int j = 0; j < a.length; j += 2) {
-          a[j] = input[i + (j >> 1)];
-          a[j + 1] = 0;
+        for (int j = 0; j < chunkSize; ++j) {
+          a[j] = Float64x2(input[i + j], 0);
         }
       }
-      if (w != null) {
-        for (int j = 0; j < a.length; j += 2) {
-          a[j] *= w[j >> 1];
-        }
-      }
-      _fft.inPlaceFft(chunk);
-      reportChunk(chunk);
+      _win?.inPlaceApply(_chunk);
+      _fft.inPlaceFft(_chunk);
+      reportChunk(_chunk);
       if (i2 >= input.length) {
         break;
       }

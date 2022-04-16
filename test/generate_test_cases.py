@@ -111,7 +111,7 @@ def makeWindowApplyCase(n):
   print('    );');
   print('    final b = [%s];' % cplxBufStr(c))
   print('    expectClose(')
-  print('      w.apply(ComplexArray(Float64List.fromList(b))).array,')
+  print('      toFloatList(w.apply(makeArray(b))),')
   print('      [%s],' % cplxBufStr(d))
   print('    );');
 
