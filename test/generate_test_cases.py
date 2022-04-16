@@ -106,12 +106,12 @@ def makeWindowApplyCase(n):
   print('    final w = Window.hamming(16);')
   print('    final a = [%s];' % realBufStr(a))
   print('    expectClose(')
-  print('      w.applyReal(Float64List.fromList(a)),')
+  print('      w.applyWindowReal(Float64List.fromList(a)),')
   print('      [%s],' % realBufStr(b))
   print('    );');
   print('    final b = [%s];' % cplxBufStr(c))
   print('    expectClose(')
-  print('      toFloatList(w.apply(makeArray(b))),')
+  print('      toFloatList(w.applyWindow(makeArray(b))),')
   print('      [%s],' % cplxBufStr(d))
   print('    );');
 

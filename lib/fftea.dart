@@ -17,60 +17,43 @@ import 'dart:typed_data';
 
 bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
 
-/// A wrapper around a Float64x2List, representing a list of complex numbers.
-class ComplexArray {
-  final Float64x2List _a;
-
-  /// Constructs a ComplexArray from a Float64x2List.
-  ComplexArray(this._a);
-
-  /// Length of the ComplexArray.
-  int get length => _a.length;
-
-  /// Returns the underlying array.
-  Float64x2List get array => _a;
-
-  /// Returns a copy of this ComplexArray.
-  ///
-  /// The underlying array is copied, so modifications to the returned
-  /// ComplexArray will not affect this one.
-  ComplexArray copy() => ComplexArray(Float64x2List.fromList(_a));
-
-  /// Converts a real array to a ComplexArray.
-  static ComplexArray fromRealArray(List<double> reals) {
+/// Extension methods for Float64x2List, representing a list of complex numbers.
+extension ComplexArray on Float64x2List {
+  /// Converts a real array to a Float64x2List of complex numbers.
+  static Float64x2List fromRealArray(List<double> reals) {
     final a = Float64x2List(reals.length);
     for (int i = 0; i < reals.length; ++i) {
       a[i] = Float64x2(reals[i], 0);
     }
-    return ComplexArray(a);
+    return a;
   }
 
-  /// Returns the real components of the ComplexArray.
+  /// Returns the real components of the Float64x2List.
   ///
   /// This method just discards the imaginary components. It doesn't check
   /// whether the imaginary components are actually close to zero.
   Float64List toRealArray() {
     final r = Float64List(length);
     for (int i = 0; i < r.length; ++i) {
-      r[i] = _a[i].x;
+      r[i] = this[i].x;
     }
     return r;
   }
 
-  /// Returns the square magnitudes of the elements of the ComplexArray.
+  /// Returns the square magnitudes of the elements of the Float64x2List.
   ///
   /// If you need the squares of the magnitudes, this method is much more
   /// efficient than calling `magnitudes()` then squaring those values.
   Float64List squareMagnitudes() {
     final m = Float64List(length);
     for (int i = 0; i < m.length; ++i) {
-      final z = _a[i];
+      final z = this[i];
       m[i] = z.x * z.x + z.y * z.y;
     }
     return m;
   }
 
-  /// Returns the magnitudes of the elements of the ComplexArray.
+  /// Returns the magnitudes of the elements of the Float64x2List.
   Float64List magnitudes() {
     final m = squareMagnitudes();
     for (int i = 0; i < m.length; ++i) {
@@ -90,9 +73,8 @@ class ComplexArray {
   ///
   /// This method returns a new array (which is a view into the same data). It
   /// does not modify this array.
-  ComplexArray discardConjugates() {
-    final len = (length >> 1) + 1;
-    return ComplexArray(Float64x2List.sublistView(_a, 0, len));
+  Float64x2List discardConjugates() {
+    return Float64x2List.sublistView(this, 0, (length >> 1) + 1);
   }
 }
 
@@ -150,10 +132,9 @@ class FFT {
   /// This is the most efficient FFT method, if your data is already in the
   /// correct format. Otherwise, you can use [realFft] to handle the conversion
   /// for you.
-  void inPlaceFft(ComplexArray complexArray) {
-    final a = complexArray._a;
+  void inPlaceFft(Float64x2List complexArray) {
     final n = _size;
-    if (a.length != n) {
+    if (complexArray.length != n) {
       throw ArgumentError('Input data is the wrong length.', 'complexArray');
     }
     // Bit reverse permutation.
@@ -166,9 +147,9 @@ class FFT {
       }
       // Permute.
       if (j < i) {
-        final temp = a[i];
-        a[i] = a[j];
-        a[j] = temp;
+        final temp = complexArray[i];
+        complexArray[i] = complexArray[j];
+        complexArray[j] = temp;
       }
     }
     // FFT main loop.
@@ -176,12 +157,12 @@ class FFT {
       final nm = n2 ~/ m;
       for (int k = 0, t = 0; k < n;) {
         final km = k + m;
-        final p = a[k];
-        final o = a[km];
+        final p = complexArray[k];
+        final o = complexArray[km];
         final w = _twiddles[t];
         final q = o.scale(w.x) + Float64x2(o.y, -o.x).scale(w.y);
-        a[k] = p + q;
-        a[km] = p - q;
+        complexArray[k] = p + q;
+        complexArray[km] = p - q;
         ++k;
         t += nm;
         if (t >= n2) {
@@ -196,9 +177,9 @@ class FFT {
   /// Real-valued FFT.
   ///
   /// Performs an FFT on real-valued inputs. Returns the result as a
-  /// [ComplexArray], and doesn't modify the input array.
-  ComplexArray realFft(List<double> a) {
-    final o = ComplexArray.fromRealArray(a);
+  /// [Float64x2List], and doesn't modify the input array.
+  Float64x2List realFft(List<double> reals) {
+    final o = ComplexArray.fromRealArray(reals);
     inPlaceFft(o);
     return o;
   }
@@ -207,21 +188,20 @@ class FFT {
   ///
   /// Performs an in-place inverse FFT on [complexArray]. The result is stored
   /// back in [complexArray]. No new arrays are allocated by this method.
-  void inPlaceInverseFft(ComplexArray complexArray) {
+  void inPlaceInverseFft(Float64x2List complexArray) {
     inPlaceFft(complexArray);
-    final a = complexArray.array;
-    final len = a.length;
+    final len = complexArray.length;
     final half = len >> 1;
     final scale = Float64x2.splat(len.toDouble());
-    a[0] /= scale;
+    complexArray[0] /= scale;
     if (len <= 1) return;
     for (int i = 1; i < half; ++i) {
       final j = len - i;
-      final temp = a[j];
-      a[j] = a[i] / scale;
-      a[i] = temp / scale;
+      final temp = complexArray[j];
+      complexArray[j] = complexArray[i] / scale;
+      complexArray[i] = temp / scale;
     }
-    a[half] /= scale;
+    complexArray[half] /= scale;
   }
 
   /// Real-valued inverse FFT.
@@ -231,81 +211,70 @@ class FFT {
   ///
   /// WARINING: For efficiency reasons, this modifies [complexArray]. If you
   /// need the original values in [complexArray] to remain unmodified, make a
-  /// copy of it first: `realInverseFft(complexArray.copy())`
-  Float64List realInverseFft(ComplexArray complexArray) {
+  /// copy of it first: `realInverseFft(complexArray.sublist(0))`
+  Float64List realInverseFft(Float64x2List complexArray) {
     inPlaceFft(complexArray);
-    final a = complexArray.array;
-    final len = a.length;
+    final len = complexArray.length;
     final scale = len.toDouble();
     final r = Float64List(len);
-    r[0] = a[0].x / scale;
+    r[0] = complexArray[0].x / scale;
     if (len <= 1) return r;
     for (int i = 1; i < len; ++i) {
-      r[i] = a[len - i].x / scale;
+      r[i] = complexArray[len - i].x / scale;
     }
     return r;
   }
 }
 
-/// A wrapper around a Float64List, representing a windowing function.
-class Window {
-  final Float64List _a;
-  Window._(this._a);
-
-  /// Length of the Window.
-  int get length => _a.length;
-
-  /// Returns the underlying array.
-  Float64List get array => _a;
-
+/// Extension methods for Float64List, representing a windowing function.
+extension Window on Float64List {
   /// Applies the window to the [complexArray].
   ///
   /// This method modifies the input array, rather than allocating a new array.
-  void inPlaceApply(ComplexArray complexArray) {
+  void inPlaceApplyWindow(Float64x2List complexArray) {
     if (complexArray.length != length) {
       throw ArgumentError('Input data is the wrong length.', 'complexArray');
     }
-    final a = complexArray.array;
-    for (int i = 0; i < a.length; ++i) {
-      a[i] = a[i].scale(_a[i]);
+    for (int i = 0; i < complexArray.length; ++i) {
+      complexArray[i] = complexArray[i].scale(this[i]);
     }
   }
 
   /// Applies the window to the [complexArray].
   ///
   /// Does not modify the input array. Allocates and returns a new array.
-  ComplexArray apply(ComplexArray complexArray) {
-    final c = complexArray.copy();
-    inPlaceApply(c);
+  Float64x2List applyWindow(Float64x2List complexArray) {
+    final c = complexArray.sublist(0);
+    inPlaceApplyWindow(c);
     return c;
   }
 
   /// Applies the window to the [realArray].
   ///
   /// This method modifies the input array, rather than allocating a new array.
-  void inPlaceApplyReal(List<double> realArray) {
+  void inPlaceApplyWindowReal(List<double> realArray) {
     final a = realArray;
     if (a.length != length) {
       throw ArgumentError('Input data is the wrong length.', 'realArray');
     }
     for (int i = 0; i < a.length; ++i) {
-      a[i] *= _a[i];
+      a[i] *= this[i];
     }
   }
 
   /// Applies the window to the [realArray].
   ///
   /// Does not modify the input array. Allocates and returns a new array.
-  Float64List applyReal(List<double> realArray) {
+  Float64List applyWindowReal(List<double> realArray) {
     final c = Float64List.fromList(realArray);
-    inPlaceApplyReal(c);
+    inPlaceApplyWindowReal(c);
     return c;
   }
 
   /// Returns a cosine window, such as Hanning or Hamming.
   ///
   /// `w[i] = 1 - amp - amp * cos(2πi / (size - 1))`
-  static Window cosine(int size, double amplitude) {
+  static Float64List cosine(int size, double amplitude) {
     final a = Float64List(size);
     final half = size >> 1;
     final size_ = size - 1;
@@ -316,26 +285,26 @@ class Window {
       a[i] = y;
       a[size_ - i] = y;
     }
-    return Window._(a);
+    return a;
   }
 
   /// Returns a Hanning window.
   ///
   /// This is a kind of cosine window.
   /// `w[i] = 0.5 - 0.5 * cos(2πi / (size - 1))`
-  static Window hanning(int size) => cosine(size, 0.5);
+  static Float64List hanning(int size) => cosine(size, 0.5);
 
   /// Returns a Hamming window.
   ///
   /// This is a kind of cosine window.
   /// `w[i] = 0.54 - 0.46 * cos(2πi / (size - 1))`
-  static Window hamming(int size) => cosine(size, 0.46);
+  static Float64List hamming(int size) => cosine(size, 0.46);
 
   /// Returns a Bartlett window.
   ///
   /// This is essentially just a triangular window.
   /// `w[i] = 1 - |2i / (size - 1) - 1|`
-  static Window bartlett(int size) {
+  static Float64List bartlett(int size) {
     final a = Float64List(size);
     final half = size >> 1;
     final size_ = size - 1;
@@ -345,14 +314,14 @@ class Window {
       a[i] = y;
       a[size_ - i] = y;
     }
-    return Window._(a);
+    return a;
   }
 
   /// Returns a Blackman window.
   ///
   /// This is a more elaborate kind of cosine window.
   /// `w[i] = 0.42 - 0.5 * cos(2πi / (size - 1)) + 0.08 * cos(4πi / (size - 1))`
-  static Window blackman(int size) {
+  static Float64List blackman(int size) {
     final a = Float64List(size);
     final half = size >> 1;
     final size_ = size - 1;
@@ -363,7 +332,7 @@ class Window {
       a[i] = y;
       a[size_ - i] = y;
     }
-    return Window._(a);
+    return a;
   }
 }
 
@@ -375,12 +344,12 @@ class Window {
 /// The chunk size must be a power of two, eg 1, 2, 4, 8, 16 etc.
 class STFT {
   final FFT _fft;
-  final Window? _win;
-  final ComplexArray _chunk;
+  final Float64List? _win;
+  final Float64x2List _chunk;
 
   STFT(int powerOf2ChunkSize, [this._win])
       : _fft = FFT(powerOf2ChunkSize),
-        _chunk = ComplexArray(Float64x2List(powerOf2ChunkSize)) {
+        _chunk = Float64x2List(powerOf2ChunkSize) {
     if (_win != null && _win!.length != powerOf2ChunkSize) {
       throw ArgumentError(
         'Window must have the same length as the chunk size.',
@@ -400,34 +369,34 @@ class STFT {
   /// chunk has been processed, the window advances by the stride. If no stride
   /// is given, it defaults to the chunk size.
   ///
-  /// WARNING: For efficiency reasons, the same ComplexArray is reused for every
-  /// chunk, always overwriting the FFT of the previous chunk. So if reportChunk
-  /// needs to keep the data, it should make a copy using `result.copy()`.
+  /// WARNING: For efficiency reasons, the same Float64x2List is reused for
+  /// every chunk, always overwriting the FFT of the previous chunk. So if
+  /// reportChunk needs to keep the data, it should make a copy (eg using
+  /// `result.sublist(0)`).
   void run(
     List<double> input,
-    Function(ComplexArray) reportChunk, [
+    Function(Float64x2List) reportChunk, [
     int chunkStride = 0,
   ]) {
     final chunkSize = _fft.size;
     if (chunkStride <= 0) chunkStride = chunkSize;
-    final a = _chunk.array;
     for (int i = 0;; i += chunkStride) {
       final i2 = i + chunkSize;
       if (i2 > input.length) {
         int j = 0;
         final stop = input.length - i;
         for (; j < stop; ++j) {
-          a[j] = Float64x2(input[i + j], 0);
+          _chunk[j] = Float64x2(input[i + j], 0);
         }
         for (; j < chunkSize; ++j) {
-          a[j] = Float64x2.zero();
+          _chunk[j] = Float64x2.zero();
         }
       } else {
         for (int j = 0; j < chunkSize; ++j) {
-          a[j] = Float64x2(input[i + j], 0);
+          _chunk[j] = Float64x2(input[i + j], 0);
         }
       }
-      _win?.inPlaceApply(_chunk);
+      _win?.inPlaceApplyWindow(_chunk);
       _fft.inPlaceFft(_chunk);
       reportChunk(_chunk);
       if (i2 >= input.length) {
@@ -441,9 +410,9 @@ class STFT {
   /// This method is the same as [run], except that it copies all the results to
   /// a list. It's a convinience method, but isn't as efficient as run. See the
   /// run method docs for more details.
-  List<ComplexArray> runAndCopy(List<double> input, [int chunkStride = 0]) {
-    final out = <ComplexArray>[];
-    run(input, (ComplexArray result) => out.add(result.copy()), chunkStride);
-    return out;
+  List<Float64x2List> runAndCopy(List<double> input, [int chunkStride = 0]) {
+    final o = <Float64x2List>[];
+    run(input, (Float64x2List f) => o.add(f.sublist(0)), chunkStride);
+    return o;
   }
 }
