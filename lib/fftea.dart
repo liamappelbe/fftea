@@ -280,21 +280,27 @@ extension Window on Float64List {
     return c;
   }
 
+  static Float64List _fillSecondHalf(Float64List a) {
+    final half = a.length >> 1;
+    final n = a.length - 1;
+    for (int i = 0; i < half; ++i) {
+      a[n - i] = a[i];
+    }
+    return a;
+  }
+
   /// Returns a cosine window, such as Hanning or Hamming.
   ///
   /// `w[i] = 1 - amp - amp * cos(2πi / (size - 1))`
   static Float64List cosine(int size, double amplitude) {
     final a = Float64List(size);
     final half = size >> 1;
-    final size_ = size - 1;
     final offset = 1 - amplitude;
     final scale = 2 * math.pi / (size - 1);
     for (int i = 0; i <= half; ++i) {
-      final y = offset - amplitude * math.cos(scale * i);
-      a[i] = y;
-      a[size_ - i] = y;
+      a[i] = offset - amplitude * math.cos(scale * i);
     }
-    return a;
+    return _fillSecondHalf(a);
   }
 
   /// Returns a Hanning window.
@@ -316,14 +322,11 @@ extension Window on Float64List {
   static Float64List bartlett(int size) {
     final a = Float64List(size);
     final half = size >> 1;
-    final size_ = size - 1;
-    final offset = size_ / 2;
+    final offset = (size - 1) / 2;
     for (int i = 0; i <= half; ++i) {
-      final y = 1 - (i / offset - 1).abs();
-      a[i] = y;
-      a[size_ - i] = y;
+      a[i] = 1 - (i / offset - 1).abs();
     }
-    return a;
+    return _fillSecondHalf(a);
   }
 
   /// Returns a Blackman window.
@@ -333,15 +336,12 @@ extension Window on Float64List {
   static Float64List blackman(int size) {
     final a = Float64List(size);
     final half = size >> 1;
-    final size_ = size - 1;
-    final scale = 2 * math.pi / size_;
+    final scale = 2 * math.pi / (size - 1);
     for (int i = 0; i <= half; ++i) {
       final t = i * scale;
-      final y = 0.42 - 0.5 * math.cos(t) + 0.08 * math.cos(2 * t);
-      a[i] = y;
-      a[size_ - i] = y;
+      a[i] = 0.42 - 0.5 * math.cos(t) + 0.08 * math.cos(2 * t);
     }
-    return a;
+    return _fillSecondHalf(a);
   }
 }
 
