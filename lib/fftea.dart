@@ -15,6 +15,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+/// Returns whether x is a power of two: 1, 2, 4, 8, ...
 bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
 
 /// Extension methods for Float64x2List, representing a list of complex numbers.
@@ -224,6 +225,14 @@ class FFT {
     }
     return r;
   }
+
+  /// Returns the frequency that the given index of FFT output represents.
+  ///
+  /// [samplesPerSecond] is the sampling rate of the input signal. The result
+  /// is in Hz.
+  double frequency(int index, double samplesPerSecond) {
+    return index * samplesPerSecond / size;
+  }
 }
 
 /// Extension methods for Float64List, representing a windowing function.
@@ -356,6 +365,14 @@ class STFT {
         '_win',
       );
     }
+  }
+
+  /// Returns the frequency that the given index of FFT output represents.
+  ///
+  /// [samplesPerSecond] is the sampling rate of the input signal. The result
+  /// is in Hz.
+  double frequency(int index, double samplesPerSecond) {
+    return _fft.frequency(index, samplesPerSecond);
   }
 
   /// Runs STFT on [input].
