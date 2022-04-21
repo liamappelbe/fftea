@@ -1,5 +1,6 @@
 # fftea
 
+[![pub package](https://img.shields.io/pub/v/fftea.svg)](https://pub.dev/packages/fftea)
 [![Build Status](https://github.com/liamappelbe/fftea/workflows/CI/badge.svg)](https://github.com/liamappelbe/fftea/actions?query=workflow%3ACI+branch%3Amain)
 [![Coverage Status](https://coveralls.io/repos/github/liamappelbe/fftea/badge.svg?branch=main)](https://coveralls.io/github/liamappelbe/fftea?branch=main)
 
