@@ -14,9 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-dart pub global activate remove_from_coverage
 dart pub global activate coverage
 dart run --pause-isolates-on-exit --disable-service-auth-codes --enable-vm-service=1234 test &
-dart pub global run coverage:collect_coverage --wait-paused --uri=http://127.0.0.1:1234/ -o coverage.json --resume-isolates
-dart pub global run coverage:format_coverage --lcov -i coverage.json -o lcov.info
-# dart pub global run remove_from_coverage -f lcov.info -r ".pub-cache"
+dart pub global run coverage:collect_coverage --wait-paused --uri=http://127.0.0.1:1234/ -o coverage.json --resume-isolates --scope-output=fftea
+dart pub global run coverage:format_coverage --packages=.dart_tool/package_config.json --lcov -i coverage.json -o lcov.info

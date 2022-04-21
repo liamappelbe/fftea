@@ -14,6 +14,7 @@
 
 name: fftea
 description: Simple efficient FFT
+repository: https://github.com/liamappelbe/fftea
 
 publish_to: 'none'
 
