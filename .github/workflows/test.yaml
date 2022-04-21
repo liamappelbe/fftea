@@ -83,7 +83,7 @@ jobs:
       name: Install dependencies
       run: dart pub get
     - name: Collect and report coverage
-      run: ./tools/test_coverage.sh
+      run: ./tool/test_coverage.sh
     - name: Upload coverage
       uses: coverallsapp/github-action@v1.1.2
       with:
