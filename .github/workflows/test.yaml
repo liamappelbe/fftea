@@ -51,12 +51,27 @@ jobs:
     - uses: actions/cache@v2.1.6
       with:
         path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
           ~/.pub-cache/hosted/
           .dart_tool/
         key: ${{ runner.os }}-${{ matrix.sdk }}
     - run: dart pub upgrade
     - run: dart test
+
+  coverage:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: dart-lang/setup-dart@v1.0
+      with:
+        sdk: dev
+    - uses: actions/checkout@v2.3.4
+    - id: install
+      name: Install dependencies
+      run: dart pub get
+    - name: Collect and report coverage
+      run: ./tools/test_coverage.sh
+    - name: Upload coverage
+      uses: coverallsapp/github-action@v1.1.3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: var/lcov.info
