@@ -55,102 +55,174 @@ void main() {
     expect(() => FFT(16), returnsNormally);
     expect(() => FFT(1), returnsNormally);
     expect(
-        () => FFT(47),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'FFT size must be a power of 2.')));
+      () => FFT(47),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
     expect(
-        () => FFT(0),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'FFT size must be a power of 2.')));
+      () => FFT(0),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
     expect(
-        () => FFT(-8),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'FFT size must be a power of 2.')));
+      () => FFT(-8),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
   });
 
   test('STFT not a power of two', () {
     expect(() => STFT(16), returnsNormally);
     expect(() => STFT(1), returnsNormally);
     expect(
-        () => STFT(47),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'FFT size must be a power of 2.')));
+      () => STFT(47),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
     expect(
-        () => STFT(0),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'FFT size must be a power of 2.')));
+      () => STFT(0),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
     expect(
-        () => STFT(-8),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'FFT size must be a power of 2.')));
+      () => STFT(-8),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
   });
 
   test('FFT input data wrong length', () {
     final fft = FFT(16);
     expect(() => fft.inPlaceFft(Float64x2List(16)), returnsNormally);
     expect(
-        () => fft.inPlaceFft(Float64x2List(8)),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'Input data is the wrong length.')));
+      () => fft.inPlaceFft(Float64x2List(8)),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'Input data is the wrong length.',
+        ),
+      ),
+    );
     expect(
-        () => fft.inPlaceFft(Float64x2List(64)),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'Input data is the wrong length.')));
+      () => fft.inPlaceFft(Float64x2List(64)),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'Input data is the wrong length.',
+        ),
+      ),
+    );
   });
 
   test('Window input data wrong length', () {
     final window = Window.hanning(47);
     expect(() => window.inPlaceApplyWindow(Float64x2List(47)), returnsNormally);
     expect(
-        () => window.inPlaceApplyWindow(Float64x2List(32)),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'Input data is the wrong length.')));
+      () => window.inPlaceApplyWindow(Float64x2List(32)),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'Input data is the wrong length.',
+        ),
+      ),
+    );
     expect(
-        () => window.inPlaceApplyWindow(Float64x2List(1024)),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'Input data is the wrong length.')));
+      () => window.inPlaceApplyWindow(Float64x2List(1024)),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'Input data is the wrong length.',
+        ),
+      ),
+    );
   });
 
   test('Window real input data wrong length', () {
     final window = Window.hanning(47);
     expect(
-        () => window.inPlaceApplyWindowReal(Float64List(47)), returnsNormally);
+      () => window.inPlaceApplyWindowReal(Float64List(47)),
+      returnsNormally,
+    );
     expect(
-        () => window.inPlaceApplyWindowReal(Float64List(32)),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'Input data is the wrong length.')));
+      () => window.inPlaceApplyWindowReal(Float64List(32)),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'Input data is the wrong length.',
+        ),
+      ),
+    );
     expect(
-        () => window.inPlaceApplyWindowReal(Float64List(1024)),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message == 'Input data is the wrong length.')));
+      () => window.inPlaceApplyWindowReal(Float64List(1024)),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'Input data is the wrong length.',
+        ),
+      ),
+    );
   });
 
   test('STFT window wrong length', () {
     expect(() => STFT(64), returnsNormally);
     expect(() => STFT(64, Window.blackman(64)), returnsNormally);
     expect(
-        () => STFT(64, Window.blackman(32)),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message ==
-                'Window must have the same length as the chunk size.')));
+      () => STFT(64, Window.blackman(32)),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message ==
+                  'Window must have the same length as the chunk size.',
+        ),
+      ),
+    );
     expect(
-        () => STFT(64, Window.blackman(128)),
-        throwsA(predicate((e) =>
-            e is ArgumentError &&
-            e.message ==
-                'Window must have the same length as the chunk size.')));
+      () => STFT(64, Window.blackman(128)),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message ==
+                  'Window must have the same length as the chunk size.',
+        ),
+      ),
+    );
   });
 }
