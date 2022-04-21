@@ -19,4 +19,4 @@ dart pub global activate coverage
 dart run --pause-isolates-on-exit --disable-service-auth-codes --enable-vm-service=1234 test &
 dart pub global run coverage:collect_coverage --wait-paused --uri=http://127.0.0.1:1234/ -o coverage.json --resume-isolates
 dart pub global run coverage:format_coverage --lcov -i coverage.json -o lcov.info
-dart pub global run remove_from_coverage -f lcov.info -r ".pub-cache"
+# dart pub global run remove_from_coverage -f lcov.info -r ".pub-cache"
