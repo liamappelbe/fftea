@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright 2022 The fftea authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,17 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: fftea
-description: Simple efficient FFT
-repository: https://github.com/liamappelbe/fftea
-
-publish_to: 'none'
-
-version: 0.1.0
-
-environment:
-  sdk: '>=2.14.0 <3.0.0'
-
-dev_dependencies:
-  lints: ^1.0.0
-  test: ^1.20.2
+dart pub global activate coverage
+dart run --pause-isolates-on-exit --disable-service-auth-codes --enable-vm-service=1234 test &
+dart pub global run coverage:collect_coverage --wait-paused --uri=http://127.0.0.1:1234/ -o coverage.json --resume-isolates --scope-output=fftea
+dart pub global run coverage:format_coverage --packages=.dart_tool/package_config.json --lcov -i coverage.json -o lcov.info
