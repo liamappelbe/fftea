@@ -13,12 +13,9 @@
 # limitations under the License.
 
 name: fftea
+version: 1.0.0
 description: Simple efficient FFT
 repository: https://github.com/liamappelbe/fftea
-
-publish_to: 'none'
-
-version: 1.0.0
 
 environment:
   sdk: '>=2.14.0 <3.0.0'
