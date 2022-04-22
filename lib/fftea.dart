@@ -18,9 +18,10 @@ import 'dart:typed_data';
 /// Returns whether x is a power of two: 1, 2, 4, 8, ...
 bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
 
-/// Extension methods for Float64x2List, representing a list of complex numbers.
+/// Extension methods for [Float64x2List], representing a list of complex
+/// numbers.
 extension ComplexArray on Float64x2List {
-  /// Converts a real array to a Float64x2List of complex numbers.
+  /// Converts a real array to a [Float64x2List] of complex numbers.
   static Float64x2List fromRealArray(List<double> reals) {
     final a = Float64x2List(reals.length);
     for (int i = 0; i < reals.length; ++i) {
@@ -29,7 +30,7 @@ extension ComplexArray on Float64x2List {
     return a;
   }
 
-  /// Returns the real components of the Float64x2List.
+  /// Returns the real components of the [Float64x2List].
   ///
   /// This method just discards the imaginary components. It doesn't check
   /// whether the imaginary components are actually close to zero.
@@ -41,10 +42,10 @@ extension ComplexArray on Float64x2List {
     return r;
   }
 
-  /// Returns the square magnitudes of the elements of the Float64x2List.
+  /// Returns the square magnitudes of the elements of the [Float64x2List].
   ///
   /// If you need the squares of the magnitudes, this method is much more
-  /// efficient than calling `magnitudes()` then squaring those values.
+  /// efficient than calling [magnitudes] then squaring those values.
   Float64List squareMagnitudes() {
     final m = Float64List(length);
     for (int i = 0; i < m.length; ++i) {
@@ -54,7 +55,7 @@ extension ComplexArray on Float64x2List {
     return m;
   }
 
-  /// Returns the magnitudes of the elements of the Float64x2List.
+  /// Returns the magnitudes of the elements of the [Float64x2List].
   Float64List magnitudes() {
     final m = squareMagnitudes();
     for (int i = 0; i < m.length; ++i) {
@@ -69,11 +70,14 @@ extension ComplexArray on Float64x2List {
   ///
   /// The result of a real valued FFT is about half redundant data, so the list
   /// returned by this function omits that data:
-  /// [sum term, ...terms..., nyquist term, ...conjugate terms...]
-  ///  ^----- These terms are kept ------^     ^- Discarded -^
+  ///
+  /// (sum term, ...terms..., nyquist term, ...conjugate terms...)
+  ///
+  /// The sum term, main terms, and nyquitst term, are kept. The conjugate terms
+  /// are discarded.
   ///
   /// This method returns a new array (which is a view into the same data). It
-  /// does not modify this array.
+  /// does not modify this array, or make a copy of the data.
   Float64x2List discardConjugates() {
     return Float64x2List.sublistView(this, 0, (length >> 1) + 1);
   }
@@ -86,11 +90,14 @@ class FFT {
   final Float64x2List _twiddles;
   final int _size;
 
+  /// Constructs an FFT object with the given size.
+  ///
+  /// The size must be a power of two, eg 1, 2, 4, 8, 16 etc.
   FFT(int powerOf2Size)
       : _twiddles = _calculateTwiddles(powerOf2Size),
         _size = powerOf2Size;
 
-  /// The size of the FFTs that this class can do.
+  /// The size of the FFTs that this object can do.
   int get size => _size;
 
   static Float64x2List _calculateTwiddles(int powerOf2Size) {
@@ -133,6 +140,9 @@ class FFT {
   /// This is the most efficient FFT method, if your data is already in the
   /// correct format. Otherwise, you can use [realFft] to handle the conversion
   /// for you.
+  ///
+  /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
+  /// of complex numbers.
   void inPlaceFft(Float64x2List complexArray) {
     final n = _size;
     if (complexArray.length != n) {
@@ -179,6 +189,13 @@ class FFT {
   ///
   /// Performs an FFT on real-valued inputs. Returns the result as a
   /// [Float64x2List], and doesn't modify the input array.
+  ///
+  /// The complex numbers in the [Float64x2List] contain both the amplitude and
+  /// phase information for each frequency. If you only care about the
+  /// amplitudes, use [ComplexArray.magnitudes].
+  ///
+  /// The result of a real valued FFT has a lot of redundant information in it.
+  /// See [ComplexArray.discardConjugates] for more info.
   Float64x2List realFft(List<double> reals) {
     final o = ComplexArray.fromRealArray(reals);
     inPlaceFft(o);
@@ -210,6 +227,9 @@ class FFT {
   /// Performs an inverse FFT and discards the imaginary components of the
   /// result.
   ///
+  /// This method expects the full result of [realFft], so don't use
+  /// [ComplexArray.discardConjugates] if you need to call [realInverseFft].
+  ///
   /// WARINING: For efficiency reasons, this modifies [complexArray]. If you
   /// need the original values in [complexArray] to remain unmodified, make a
   /// copy of it first: `realInverseFft(complexArray.sublist(0))`
@@ -228,14 +248,14 @@ class FFT {
 
   /// Returns the frequency that the given index of FFT output represents.
   ///
-  /// [samplesPerSecond] is the sampling rate of the input signal. The result
-  /// is in Hz.
+  /// [samplesPerSecond] is the sampling rate of the input signal in Hz. The
+  /// result is also in Hz.
   double frequency(int index, double samplesPerSecond) {
     return index * samplesPerSecond / size;
   }
 }
 
-/// Extension methods for Float64List, representing a windowing function.
+/// Extension methods for [Float64List], representing a windowing function.
 extension Window on Float64List {
   /// Applies the window to the [complexArray].
   ///
@@ -356,6 +376,10 @@ class STFT {
   final Float64List? _win;
   final Float64x2List _chunk;
 
+  /// Constructs an STFT object of the given size, with an optional windowing
+  /// function.
+  ///
+  /// The chunk size must be a power of two, eg 1, 2, 4, 8, 16 etc.
   STFT(int powerOf2ChunkSize, [this._win])
       : _fft = FFT(powerOf2ChunkSize),
         _chunk = Float64x2List(powerOf2ChunkSize) {
@@ -369,8 +393,8 @@ class STFT {
 
   /// Returns the frequency that the given index of FFT output represents.
   ///
-  /// [samplesPerSecond] is the sampling rate of the input signal. The result
-  /// is in Hz.
+  /// [samplesPerSecond] is the sampling rate of the input signal in Hz. The
+  /// result is also in Hz.
   double frequency(int index, double samplesPerSecond) {
     return _fft.frequency(index, samplesPerSecond);
   }
@@ -386,9 +410,9 @@ class STFT {
   /// chunk has been processed, the window advances by the stride. If no stride
   /// is given, it defaults to the chunk size.
   ///
-  /// WARNING: For efficiency reasons, the same Float64x2List is reused for
+  /// WARNING: For efficiency reasons, the same [Float64x2List] is reused for
   /// every chunk, always overwriting the FFT of the previous chunk. So if
-  /// reportChunk needs to keep the data, it should make a copy (eg using
+  /// [reportChunk] needs to keep the data, it should make a copy (eg using
   /// `result.sublist(0)`).
   void run(
     List<double> input,
@@ -425,8 +449,8 @@ class STFT {
   /// Runs STFT on [input].
   ///
   /// This method is the same as [run], except that it copies all the results to
-  /// a list. It's a convinience method, but isn't as efficient as run. See the
-  /// run method docs for more details.
+  /// a [List<Float64x2List>] and returns it. It's a convenience method, but
+  /// isn't as efficient as run. See [run] for more details.
   List<Float64x2List> runAndCopy(List<double> input, [int chunkStride = 0]) {
     final o = <Float64x2List>[];
     run(input, (Float64x2List f) => o.add(f.sublist(0)), chunkStride);
