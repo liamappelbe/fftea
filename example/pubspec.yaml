@@ -12,16 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: fftea
+name: spectrogram
 version: 1.0.0
-description: >
-  Simple efficient FFT. Includes a very fast implementation of FFT, plus related
-  utilities like STFT, windowing, and inverse FFT.
-repository: https://github.com/liamappelbe/fftea
+description: A simple command line WAV file spectrogram viewer.
+
+publish_to: 'none'
 
 environment:
   sdk: '>=2.14.0 <3.0.0'
 
+dependencies:
+  fftea:
+    path: ..
+
 dev_dependencies:
   lints: ^1.0.0
-  test: ^1.20.2

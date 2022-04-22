@@ -25,12 +25,54 @@ improvements that make this implementation more efficient:
 
 ## Usage
 
+Running a basic real-valued FFT:
+
 ```dart
-List<double> myData = ...;
 // myData.length must be a power of two. Eg 2, 4, 8, 16, ...
+List<double> myData = ...;
+
 final fft = FFT(myData.length);
 final freq = fft.realFft(myData);
 ```
+
+`freq` is a `Float64x2List` representing a list of complex numbers. See
+`ComplexArray` for helpful extension methods on `Float64x2List`.
+
+For efficiency, avoid recreating the `FFT` object each time. Instead, create one
+`FFT` object of whatever size you need, and reuse it.
+
+Running an STFT to calculate a spectrogram:
+
+```dart
+// audio.length *doesn't* need to be a power of two. It can be any legnth.
+List<double> audio = ...;
+
+final chunkSize = 1024;  // Must be a power of two.
+final stft = STFT(chunkSize, Window.hanning(chunkSize));
+
+final spectrogram = <Float64List>[];
+stft.run(audio, (Float64x2List freq) {
+  spectrogram.add(freq.discardConjugates().magnitudes());
+});
+
+```
+
+The result of a real valued FFT is about half redundant data, so
+`discardConjugates` removes that data from the result:
+
+[sum term, ...terms..., nyquist term, ...conjugate terms...]
+ ^----- These terms are kept ------^     ^- Discarded -^
+
+Then `magnitudes` discards the phase data of the complex numbers and just keeps
+the amplitudes, which is usually what you want for a spectrogram.
+
+If you want to know the frequency of one of the elements of the spectrogram, use
+`stft.frequency(index, samplingFrequency)`, where `samplingFrequency` is the
+frequency that `audio` was recorded at, eg 44100. The maximum frequency (aka
+nyquist frequency) of the spectrogram will be
+`stft.frequency(chunkSize / 2, samplingFrequency)`.
+
+See the example for more detailed usage.
 
 ## Benchmarks
 
