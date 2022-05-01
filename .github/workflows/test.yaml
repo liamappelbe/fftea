@@ -46,6 +46,8 @@ jobs:
       run: dart pub upgrade
     - run: dart pub upgrade
       working-directory: bench
+    - run: dart pub upgrade
+      working-directory: example
     - run: dart format --output=none --set-exit-if-changed .
       if: always() && steps.install.outcome == 'success'
     - run: dart analyze --fatal-infos
