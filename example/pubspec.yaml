@@ -24,6 +24,7 @@ environment:
 dependencies:
   fftea:
     path: ..
+  wav: ^1.0.0
 
 dev_dependencies:
   lints: ^1.0.0

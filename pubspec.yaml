@@ -13,7 +13,7 @@
 # limitations under the License.
 
 name: fftea
-version: 1.0.0+1
+version: 1.0.0+2
 description: >
   Simple efficient FFT. Includes a very fast implementation of FFT, plus related
   utilities like STFT, windowing, and inverse FFT.

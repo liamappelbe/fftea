@@ -13,93 +13,22 @@
 // limitations under the License.
 
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
+import 'package:wav/wav.dart';
 
-class Wav {
-  final int sampleRate;
-  final List<Float64List> channels;
-  Wav._(this.sampleRate, this.channels);
-
-  static Wav read(Uint8List bytes) {
-    int p = 0;
-    ByteData read(int n) {
-      final b = ByteData.sublistView(bytes, p, p + n);
-      p += n;
-      return b;
-    }
-
-    int readU8() => (read(1)).getUint8(0);
-    int readU16() => (read(2)).getUint16(0, Endian.little);
-    int readU32() => (read(4)).getUint32(0, Endian.little);
-    int readU24() => readU8() + 0x100 * readU16();
-    void checkString(String str) {
-      final s = String.fromCharCodes(Uint8List.sublistView(read(str.length)));
-      if (s != str) {
-        throw FormatException('WAV is corrupted, or not a WAV file.');
-      }
-    }
-
-    checkString('RIFF');
-    readU32(); // File size.
-    checkString('WAVE');
-    checkString('fmt ');
-    readU32(); // Format block size.
-    final format = readU16();
-    if (format != 1 /* PCM */) {
-      throw FormatException('WAV is not using PCM format.');
-    }
-    final numChannels = readU16();
-    if (numChannels < 1) {
-      throw FormatException('WAV has no channels.');
-    }
-    final sampleRate = readU32();
-    readU32(); // Bytes per second.
-    final bytesPerSample = readU16();
-    final bitsPerSamplePerChannel = readU16();
-    checkString('data');
-    final dataSize = readU32();
-    final numSamples = dataSize ~/ bytesPerSample;
-    final channels = <Float64List>[];
-    for (int i = 0; i < numChannels; ++i) {
-      channels.add(Float64List(numSamples));
-    }
-    int Function()? readSample = (bitsPerSamplePerChannel == 8)
-        ? readU8
-        : (bitsPerSamplePerChannel == 16)
-            ? readU16
-            : (bitsPerSamplePerChannel == 24)
-                ? readU24
-                : (bitsPerSamplePerChannel == 32)
-                    ? readU32
-                    : null;
-    if (readSample == null) {
-      throw FormatException(
-        'WAV has unsupported bits per sample. Must be 8, 16, 24, or 32.',
-      );
-    }
-    final div = (1 << (bitsPerSamplePerChannel - 1)) * 1.0;
-    for (int i = 0; i < numSamples; ++i) {
-      for (int j = 0; j < numChannels; ++j) {
-        channels[j][i] = readSample() / div;
-      }
-    }
-    if (p != bytes.length) {
-      throw FormatException('WAV has leftover bytes');
-    }
-    return Wav._(sampleRate, channels);
+Float64List normalizeRmsVolume(List<double> a, double target) {
+  final b = Float64List.fromList(a);
+  double squareSum = 0;
+  for (final x in b) {
+    squareSum += x * x;
   }
-
-  Float64List toMono() {
-    final mono = Float64List(channels[0].length);
-    for (int i = 0; i < mono.length; ++i) {
-      for (int j = 0; j < channels.length; ++j) {
-        mono[i] += channels[j][i];
-      }
-      mono[i] /= channels.length;
-    }
-    return mono;
+  double factor = target * math.sqrt(b.length / squareSum);
+  for (int i = 0; i < b.length; ++i) {
+    b[i] *= factor;
   }
+  return b;
 }
 
 Uint64List linSpace(int end, int steps) {
@@ -112,9 +41,9 @@ Uint64List linSpace(int end, int steps) {
 }
 
 String gradient(double power) {
-  const maxPower = 20.0;
+  const scale = 2;
   const levels = [' ', '░', '▒', '▓', '█'];
-  int index = (power * levels.length) ~/ maxPower;
+  int index = math.log((power * levels.length) * scale).floor();
   if (index < 0) index = 0;
   if (index >= levels.length) index = levels.length - 1;
   return levels[index];
@@ -126,8 +55,8 @@ void main(List<String> argv) async {
     print('  dart run spectrogram.dart test.wav');
     return;
   }
-  final wav = Wav.read(await File(argv[0]).readAsBytes());
-  final audio = wav.toMono();
+  final wav = await Wav.readFile(argv[0]);
+  final audio = normalizeRmsVolume(wav.toMono(), 0.3);
   const chunkSize = 2048;
   const buckets = 120;
   final stft = STFT(chunkSize, Window.hanning(chunkSize));
