@@ -4,25 +4,20 @@
 [![Build Status](https://github.com/liamappelbe/fftea/workflows/CI/badge.svg)](https://github.com/liamappelbe/fftea/actions?query=workflow%3ACI+branch%3Amain)
 [![Coverage Status](https://coveralls.io/repos/github/liamappelbe/fftea/badge.svg?branch=main)](https://coveralls.io/github/liamappelbe/fftea?branch=main)
 
-A simple and efficient FFT implementation.
+A simple and efficient Fast Fourier Transform (FFT) implementation.
 
-Supports FFT of power-of-two sized arrays of real or complex numbers, using the
-Cooley-Tukey algorithm. Also includes some related utilities, such as windowing
-functions, STFT, and inverse FFT.
+FFT converts a time domain signal to the frequency domain, and back again. This
+is useful for all sorts of applications:
 
-This package was built because package:fft is not actively maintained anymore,
-and wasn't a particularly efficient implementation. There are a few
-improvements that make this implementation more efficient:
+- Filtering or synthesizing audio
+- Compression algorithms such as JPEG and MP3
+- Computing a spectrogram (most AI applications that analyze audio use
+  spectrograms)
+- Convolutions, such as reverb filters for audio, or blurring filters for images
 
-- The main FFT class is constructed with a given size, so that the twiddle
-  factors only have to be calculated once. This is particularly handy for STFT.
-- Doesn't use a wrapper class for complex numbers, just uses a Float64x2List.
-  Every little wrapper class is a seperate allocation and dereference. For inner
-  loop code, like FFT's complex number math, this makes a big difference.
-  Float64x2 can also take advantage of SIMD optimisations.
-- FFT algorithm is in-place, so no additional arrays are allocated.
-- Loop based FFT, rather than recursive.
-- Using trigonometric tricks to only calculate a quarter of the twiddle factors.
+This library supports FFT of power-of-two sized arrays of real or complex
+numbers, using the Cooley-Tukey algorithm. It also includes some related
+utilities, such as windowing functions, STFT, and inverse FFT.
 
 ## Usage
 
@@ -59,10 +54,13 @@ stft.run(audio, (Float64x2List freq) {
 ```
 
 The result of a real valued FFT is about half redundant data, so
-`discardConjugates` removes that data from the result:
+`discardConjugates` removes that data from the result (a common practice for
+spectrograms):
 
+```
 [sum term, ...terms..., nyquist term, ...conjugate terms...]
  ^----- These terms are kept ------^     ^- Discarded -^
+```
 
 Then `magnitudes` discards the phase data of the complex numbers and just keeps
 the amplitudes, which is usually what you want for a spectrogram.
@@ -76,6 +74,20 @@ nyquist frequency) of the spectrogram will be
 See the example for more detailed usage.
 
 ## Benchmarks
+
+This package was built because package:fft is not actively maintained anymore,
+and wasn't a particularly efficient implementation. There are a few
+improvements that make this implementation more efficient:
+
+- The main FFT class is constructed with a given size, so that the twiddle
+  factors only have to be calculated once. This is particularly handy for STFT.
+- Doesn't use a wrapper class for complex numbers, just uses a Float64x2List.
+  Every little wrapper class is a seperate allocation and dereference. For inner
+  loop code, like FFT's complex number math, this makes a big difference.
+  Float64x2 can also take advantage of SIMD optimisations.
+- FFT algorithm is in-place, so no additional arrays are allocated.
+- Loop based FFT, rather than recursive.
+- Using trigonometric tricks to only calculate a quarter of the twiddle factors.
 
 I found some other promising FFT implementations, so I decided to benchmark them
 too: scidart, and smart_signal_processing.
