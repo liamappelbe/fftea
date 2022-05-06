@@ -89,13 +89,15 @@ extension ComplexArray on Float64x2List {
 class FFT {
   final Float64x2List _twiddles;
   final int _size;
+  final int _bits;
 
   /// Constructs an FFT object with the given size.
   ///
   /// The size must be a power of two, eg 1, 2, 4, 8, 16 etc.
   FFT(int powerOf2Size)
       : _twiddles = _calculateTwiddles(powerOf2Size),
-        _size = powerOf2Size;
+        _size = powerOf2Size,
+        _bits = _highestBit(powerOf2Size);
 
   /// The size of the FFTs that this object can do.
   int get size => _size;
@@ -132,6 +134,15 @@ class FFT {
     return twiddles;
   }
 
+  static int _highestBit(int x) {
+    return ((x & 0xAAAAAAAAAAAAAAAA) != 0 ? 1 : 0) |
+        ((x & 0xCCCCCCCCCCCCCCCC) != 0 ? 2 : 0) |
+        ((x & 0xF0F0F0F0F0F0F0F0) != 0 ? 4 : 0) |
+        ((x & 0xFF00FF00FF00FF00) != 0 ? 8 : 0) |
+        ((x & 0xFFFF0000FFFF0000) != 0 ? 16 : 0) |
+        ((x & 0xFFFFFFFF00000000) != 0 ? 32 : 0);
+  }
+
   /// In-place FFT.
   ///
   /// Performs an in-place FFT on [complexArray]. The result is stored back in
@@ -150,12 +161,17 @@ class FFT {
     }
     // Bit reverse permutation.
     final n2 = n >> 1;
+    final shift = 64 - _bits;
     for (int i = 0; i < n; ++i) {
       // Calculate bit reversal.
-      int j = 0;
-      for (int nn = n2, ii = i; nn > 0; nn >>= 1, ii >>= 1) {
-        j = (j << 1) | (ii & 1);
-      }
+      int j = i;
+      j = ((j >>> 32) & 0x00000000FFFFFFFF) | (j << 32);
+      j = ((j >>> 16) & 0x0000FFFF0000FFFF) | ((j & 0x0000FFFF0000FFFF) << 16);
+      j = ((j >>> 8) & 0x00FF00FF00FF00FF) | ((j & 0x00FF00FF00FF00FF) << 8);
+      j = ((j >>> 4) & 0x0F0F0F0F0F0F0F0F) | ((j & 0x0F0F0F0F0F0F0F0F) << 4);
+      j = ((j >>> 2) & 0x3333333333333333) | ((j & 0x3333333333333333) << 2);
+      j = ((j >>> 1) & 0x5555555555555555) | ((j & 0x5555555555555555) << 1);
+      j >>>= shift;
       // Permute.
       if (j < i) {
         final temp = complexArray[i];
