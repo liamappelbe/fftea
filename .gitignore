@@ -6,5 +6,4 @@
 .pub/
 build/
 pubspec.lock
-lcov.info
-coverage.json
+coverage/
