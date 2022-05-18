@@ -271,6 +271,235 @@ class FFT {
   }
 }
 
+Float64x2List select(Float64x2List input, int stride, int offset) {
+  final out = Float64x2List(input.length ~/ stride);
+  for (int i = offset, j = 0; i < input.length; i += stride, ++j) {
+    out[j] = input[i];
+  }
+  return out;
+}
+
+Float64x2 compMul(Float64x2 a, Float64x2 b) {
+  return Float64x2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
+}
+
+Float64x2 rotor(double t) => Float64x2(math.cos(t), math.sin(t));
+Float64x2 twiddle(int n, int k) => rotor(-2 * math.pi * k / n);
+
+Float64x2List dumbRad3Fft(Float64x2List input) {
+  if (input.length == 1) return input;
+  final out = Float64x2List(input.length);
+  final sub0 = dumbRad3Fft(select(input, 3, 0));
+  final sub1 = dumbRad3Fft(select(input, 3, 1));
+  final sub2 = dumbRad3Fft(select(input, 3, 2));
+  final nn = input.length ~/ 3;
+  final ww = twiddle(3, 1);
+  final www = compMul(ww, ww);
+  for (int k = 0; k < nn; ++k) {
+    final p = sub0[k];
+    final q = compMul(sub1[k], twiddle(input.length, k));
+    final r = compMul(sub2[k], twiddle(input.length, 2 * k));
+    out[k] = p + q + r;
+    out[k + nn] = p + compMul(q, twiddle(input.length, nn)) + compMul(r, twiddle(input.length, 2 * nn));
+    out[k + 2 * nn] = p + compMul(q, twiddle(input.length, 2 * nn)) + compMul(r, twiddle(input.length, 4 * nn));
+  }
+  return out;
+}
+
+List<int> primeDecomp(int n) {
+  final a = <int>[];
+  for (int i = 2;;) {
+    if (n % i != 0) {
+      i += 1 + (i % 2);
+      if (i * i > n) break;
+    } else {
+      a.add(i);
+      n ~/= i;
+    }
+  }
+  if (n != 1) a.add(n);
+  return a;
+}
+
+/*Float64x2List compositeFft(Float64x2List input) {
+  return compositeFftImpl(input, 1, 0, primeDecomp(input.length), 0);
+}
+
+Float64x2List compositeFftImpl(Float64x2List input, int stride, int offset, List<int> decomp, int di) {
+  // TODO: Rewrite as a loop rather than a recursion.
+  // TODO: Do all allocations once.
+  // TODO: Calculate twiddle factors once.
+  // TODO: Can we make this inline?
+  // TODO: Handle large prime factors.
+  if (di >= decomp.length) return Float64x2List.fromList([input[offset]]);
+  final s = decomp[di];
+  final ss = s * stride;
+  final sub = <Float64x2List>[];
+  for (int i = 0; i < s; ++i) {
+    sub.add(compositeFftImpl(input, ss, i * stride + offset, decomp, di + 1));
+  }
+  final n = input.length ~/ stride;
+  final out = Float64x2List(n);
+  final nn = n ~/ s;
+  final w = [for (int i = 0; i < n; ++i) twiddle(n, i),];
+  for (int i = 0; i < nn; ++i) {
+    for (int j = 0; j < s; ++j) {
+      out[i + j * nn] = sub[0][i];
+    }
+    for (int j = 1; j < s; ++j) {
+      final p = compMul(sub[j][i], w[i * j]);
+      out[i] += p;
+      for (int k = 1; k < s; ++k) {
+        out[i + k * nn] += compMul(p, w[(j * k * nn) % n]);
+      }
+    }
+  }
+  return out;
+}*/
+
+/*Float64x2List compositeFft(Float64x2List input) {
+  final n = input.length;
+  Float64x2List out = Float64x2List(n);
+  Float64x2List buf = Float64x2List(n);
+  Float64x2List w = Float64x2List(n);
+  for (int i = 0; i < n; ++i) w[i] = twiddle(n, i);
+  compositeFftImpl(input, buf, out, w, n, 1, 0, 0, primeDecomp(n), 0);
+  return out;
+}
+
+void compositeFftImpl(Float64x2List input, Float64x2List buf, Float64x2List out, Float64x2List w, int n, int stride, int off, int boff, List<int> decomp, int di) {
+  // TODO: Rewrite as a loop rather than a recursion.
+  // TODO: Can we make this inline?
+  // TODO: Handle large prime factors.
+  // TODO: Reduce index multiplications.
+  if (di >= decomp.length) {
+    out[boff] = input[off];
+    return;
+  }
+  final s = decomp[di];
+  final ss = s * stride;
+  final nn = n ~/ s;
+  for (int i = 0; i < s; ++i) {
+    compositeFftImpl(input, out, buf, w, nn, ss, i * stride + off, boff + i * nn, decomp, di + 1);
+  }
+  for (int i = 0; i < nn; ++i) {
+    final bi = boff + i;
+    for (int j = 0; j < s; ++j) {
+      out[bi + j * nn] = buf[bi];
+    }
+    for (int j = 1; j < s; ++j) {
+      final p = buf[bi + j * nn];
+      for (int k = 0; k < s; ++k) {
+        out[bi + k * nn] += compMul(p, w[stride * ((j * (k * nn + i)) % n)]);
+      }
+    }
+  }
+}*/
+
+int digitReverse(int x, List<int> decomp) {
+  int y = 0;
+  for (final r in decomp) {
+    y *= r;
+    y += x % r;
+    x ~/= r;
+  }
+  return y;
+}
+
+Float64x2List compositeFft(Float64x2List input) {
+  final n = input.length;
+  Float64x2List out = Float64x2List(n);
+  Float64x2List buf = Float64x2List(n);
+  Float64x2List w = Float64x2List(n);
+  for (int i = 0; i < n; ++i) w[i] = twiddle(n, i);
+  compositeFftImpl(input, buf, out, w, n, 1, 0, 0, primeDecomp(n), 0);
+  return out;
+}
+
+void compositeFftImpl(Float64x2List input, Float64x2List buf, Float64x2List out, Float64x2List w, int n, int stride, int off, int boff, List<int> decomp, int di) {
+  // TODO: Rewrite as a loop rather than a recursion.
+  // TODO: Can we make this inline?
+  // TODO: Handle large prime factors.
+  // TODO: Reduce index multiplications.
+  if (di >= decomp.length) {
+    out[boff] = input[off];
+    return;
+  }
+  final s = decomp[di];
+  final ss = s * stride;
+  final nn = n ~/ s;
+  for (int i = 0; i < s; ++i) {
+    compositeFftImpl(input, out, buf, w, nn, ss, i * stride + off, boff + i * nn, decomp, di + 1);
+  }
+  for (int i = 0; i < nn; ++i) {
+    final bi = boff + i;
+    for (int j = 0; j < s; ++j) {
+      out[bi + j * nn] = buf[bi];
+    }
+    for (int j = 1; j < s; ++j) {
+      final p = buf[bi + j * nn];
+      for (int k = 0; k < s; ++k) {
+        out[bi + k * nn] += compMul(p, w[stride * ((j * (k * nn + i)) % n)]);
+      }
+    }
+  }
+}
+
+/*Float64x2List compositeFft(Float64x2List input) {
+  final _n = input.length;
+  Float64x2List out = input.sublist(0);
+  Float64x2List buf = input.sublist(0);
+  Float64x2List w = Float64x2List(_n);
+  for (int i = 0; i < _n; ++i) w[i] = twiddle(_n, i);
+  int stride = 1;
+  int off = 0;
+  int boff = 0;
+  final decomp = primeDecomp(_n);
+
+  int stride = _n;
+  int n = 1;
+  for (int di = decomp.length - 1; di >= 0; --di) {
+    final s = decomp[di];
+    stride ~/= s;
+    final nn = n;
+    n *= s;
+
+    final temp = out;
+    out = buf;
+    buf = temp;
+  }
+  return out;
+}
+
+void compositeFftImpl(Float64x2List input, Float64x2List buf, Float64x2List out, Float64x2List w, int n, int stride, int off, int boff, List<int> decomp, int di) {
+  // TODO: Rewrite as a loop rather than a recursion.
+  // TODO: Can we make this inline?
+  // TODO: Handle large prime factors.
+  // TODO: Reduce index multiplications.
+  if (di >= decomp.length) {
+    out[boff] = input[off];
+    return;
+  }
+  final s = decomp[di];
+  final ss = s * stride;
+  final nn = n ~/ s;
+  for (int i = 0; i < s; ++i) {
+    compositeFftImpl(input, out, buf, w, nn, ss, i * stride + off, boff + i * nn, decomp, di + 1);
+  }
+  for (int j = 0; j < nn; ++j) {
+    final bi = boff + j;
+    for (int k = 0; k < s; ++k) {
+      out[bi + k * nn] = buf[bi];
+    }
+    for (int k = 1; k < s; ++k) {
+      final p = buf[bi + k * nn];
+      for (int l = 0; l < s; ++l) {
+        out[bi + l * nn] += compMul(p, w[stride * ((k * (l * nn + j)) % n)]);
+      }
+    }
+  }
+}*/
+
 /// Extension methods for [Float64List], representing a windowing function.
 extension Window on Float64List {
   /// Applies the window to the [complexArray].
