@@ -17,22 +17,6 @@ import 'package:fftea/fftea.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('isPowerOf2', () {
-    expect(isPowerOf2(0), isFalse);
-    expect(isPowerOf2(1), isTrue);
-    expect(isPowerOf2(2), isTrue);
-    expect(isPowerOf2(3), isFalse);
-    expect(isPowerOf2(4), isTrue);
-    expect(isPowerOf2(5), isFalse);
-    expect(isPowerOf2(6), isFalse);
-    expect(isPowerOf2(7), isFalse);
-    expect(isPowerOf2(8), isTrue);
-    expect(isPowerOf2(47), isFalse);
-    expect(isPowerOf2(16384), isTrue);
-    expect(isPowerOf2(-123), isFalse);
-    expect(isPowerOf2(-4), isFalse);
-  });
-
   test('FFT.frequency', () {
     final fft = FFT(16);
     expect(fft.frequency(0, 32), 0);
@@ -49,76 +33,6 @@ void main() {
     expect(stft.frequency(2, 32), 1);
     expect(stft.frequency(8, 32), 4);
     expect(stft.frequency(32, 1024), 512);
-  });
-
-  test('FFT not a power of two', () {
-    expect(() => FFT(16), returnsNormally);
-    expect(() => FFT(1), returnsNormally);
-    expect(
-      () => FFT(47),
-      throwsA(
-        predicate(
-          (e) =>
-              e is ArgumentError &&
-              e.message == 'FFT size must be a power of 2.',
-        ),
-      ),
-    );
-    expect(
-      () => FFT(0),
-      throwsA(
-        predicate(
-          (e) =>
-              e is ArgumentError &&
-              e.message == 'FFT size must be a power of 2.',
-        ),
-      ),
-    );
-    expect(
-      () => FFT(-8),
-      throwsA(
-        predicate(
-          (e) =>
-              e is ArgumentError &&
-              e.message == 'FFT size must be a power of 2.',
-        ),
-      ),
-    );
-  });
-
-  test('STFT not a power of two', () {
-    expect(() => STFT(16), returnsNormally);
-    expect(() => STFT(1), returnsNormally);
-    expect(
-      () => STFT(47),
-      throwsA(
-        predicate(
-          (e) =>
-              e is ArgumentError &&
-              e.message == 'FFT size must be a power of 2.',
-        ),
-      ),
-    );
-    expect(
-      () => STFT(0),
-      throwsA(
-        predicate(
-          (e) =>
-              e is ArgumentError &&
-              e.message == 'FFT size must be a power of 2.',
-        ),
-      ),
-    );
-    expect(
-      () => STFT(-8),
-      throwsA(
-        predicate(
-          (e) =>
-              e is ArgumentError &&
-              e.message == 'FFT size must be a power of 2.',
-        ),
-      ),
-    );
   });
 
   test('FFT input data wrong length', () {

@@ -15,8 +15,7 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-/// Returns whether x is a power of two: 1, 2, 4, 8, ...
-bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
+import 'util.dart';
 
 /// Extension methods for [Float64x2List], representing a list of complex
 /// numbers.
@@ -79,69 +78,27 @@ extension ComplexArray on Float64x2List {
   /// This method returns a new array (which is a view into the same data). It
   /// does not modify this array, or make a copy of the data.
   Float64x2List discardConjugates() {
-    return Float64x2List.sublistView(this, 0, (length >> 1) + 1);
+    return Float64x2List.sublistView(this, 0, (length >>> 1) + 1);
   }
 }
 
-/// Performs FFTs (Fast Fourier Transforms) of a particular size.
-///
-/// The size must be a power of two, eg 1, 2, 4, 8, 16 etc.
-class FFT {
-  final Float64x2List _twiddles;
+abstract class FFT {
+  static final _ffts = <int, FFT>{};
   final int _size;
-  final int _bits;
+  FFT._(this._size);
+
+  static FFT _makeFFT(int size) {
+    if (isPowerOf2(size)) {
+      return Radix2FFT(size);
+    }
+    return CompositeFFT(size);
+  }
 
   /// Constructs an FFT object with the given size.
-  ///
-  /// The size must be a power of two, eg 1, 2, 4, 8, 16 etc.
-  FFT(int powerOf2Size)
-      : _twiddles = _calculateTwiddles(powerOf2Size),
-        _size = powerOf2Size,
-        _bits = _highestBit(powerOf2Size);
+  factory FFT(int size) => _ffts[size] ??= _makeFFT(size);
 
   /// The size of the FFTs that this object can do.
   int get size => _size;
-
-  static Float64x2List _calculateTwiddles(int powerOf2Size) {
-    if (!isPowerOf2(powerOf2Size)) {
-      throw ArgumentError('FFT size must be a power of 2.', 'powerOf2Size');
-    }
-    if (powerOf2Size <= 1) return Float64x2List.fromList([]);
-    if (powerOf2Size == 2) return Float64x2List.fromList([Float64x2(1, 0)]);
-    if (powerOf2Size == 4) {
-      return Float64x2List.fromList([Float64x2(1, 0), Float64x2(0, 1)]);
-    }
-    final half = powerOf2Size >> 1;
-    final twiddles = Float64x2List(half);
-    twiddles[0] = Float64x2(1, 0);
-    final step = 2 * math.pi / powerOf2Size;
-    final quarter = half >> 1;
-    final eighth = quarter >> 1;
-    for (int i = 1; i < eighth; ++i) {
-      final theta = step * i;
-      twiddles[i] = Float64x2(math.cos(theta), math.sin(theta));
-    }
-    twiddles[eighth] = Float64x2(math.sqrt1_2, math.sqrt1_2);
-    for (int i = 1; i < eighth; ++i) {
-      final z = -twiddles[eighth - i];
-      twiddles[eighth + i] = Float64x2(-z.y, -z.x);
-    }
-    twiddles[quarter] = Float64x2(0, 1);
-    for (int i = 1; i < quarter; ++i) {
-      final z = twiddles[quarter - i];
-      twiddles[quarter + i] = Float64x2(-z.x, z.y);
-    }
-    return twiddles;
-  }
-
-  static int _highestBit(int x) {
-    return ((x & 0xAAAAAAAAAAAAAAAA) != 0 ? 1 : 0) |
-        ((x & 0xCCCCCCCCCCCCCCCC) != 0 ? 2 : 0) |
-        ((x & 0xF0F0F0F0F0F0F0F0) != 0 ? 4 : 0) |
-        ((x & 0xFF00FF00FF00FF00) != 0 ? 8 : 0) |
-        ((x & 0xFFFF0000FFFF0000) != 0 ? 16 : 0) |
-        ((x & 0xFFFFFFFF00000000) != 0 ? 32 : 0);
-  }
 
   /// In-place FFT.
   ///
@@ -154,52 +111,7 @@ class FFT {
   ///
   /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
   /// of complex numbers.
-  void inPlaceFft(Float64x2List complexArray) {
-    final n = _size;
-    if (complexArray.length != n) {
-      throw ArgumentError('Input data is the wrong length.', 'complexArray');
-    }
-    // Bit reverse permutation.
-    final n2 = n >> 1;
-    final shift = 64 - _bits;
-    for (int i = 0; i < n; ++i) {
-      // Calculate bit reversal.
-      int j = i;
-      j = ((j >>> 32) & 0x00000000FFFFFFFF) | (j << 32);
-      j = ((j >>> 16) & 0x0000FFFF0000FFFF) | ((j & 0x0000FFFF0000FFFF) << 16);
-      j = ((j >>> 8) & 0x00FF00FF00FF00FF) | ((j & 0x00FF00FF00FF00FF) << 8);
-      j = ((j >>> 4) & 0x0F0F0F0F0F0F0F0F) | ((j & 0x0F0F0F0F0F0F0F0F) << 4);
-      j = ((j >>> 2) & 0x3333333333333333) | ((j & 0x3333333333333333) << 2);
-      j = ((j >>> 1) & 0x5555555555555555) | ((j & 0x5555555555555555) << 1);
-      j >>>= shift;
-      // Permute.
-      if (j < i) {
-        final temp = complexArray[i];
-        complexArray[i] = complexArray[j];
-        complexArray[j] = temp;
-      }
-    }
-    // FFT main loop.
-    for (int m = 1; m < n;) {
-      final nm = n2 ~/ m;
-      for (int k = 0, t = 0; k < n;) {
-        final km = k + m;
-        final p = complexArray[k];
-        final o = complexArray[km];
-        final w = _twiddles[t];
-        final q = o.scale(w.x) + Float64x2(o.y, -o.x).scale(w.y);
-        complexArray[k] = p + q;
-        complexArray[km] = p - q;
-        ++k;
-        t += nm;
-        if (t >= n2) {
-          k += m;
-          t = 0;
-        }
-      }
-      m <<= 1;
-    }
-  }
+  void inPlaceFft(Float64x2List complexArray);
 
   /// Real-valued FFT.
   ///
@@ -225,7 +137,7 @@ class FFT {
   void inPlaceInverseFft(Float64x2List complexArray) {
     inPlaceFft(complexArray);
     final len = complexArray.length;
-    final half = len >> 1;
+    final half = len >>> 1;
     final scale = Float64x2.splat(len.toDouble());
     complexArray[0] /= scale;
     if (len <= 1) return;
@@ -271,6 +183,134 @@ class FFT {
   }
 }
 
+/// Performs FFTs (Fast Fourier Transforms) of a particular size.
+///
+/// The size must be a power of two, eg 1, 2, 4, 8, 16 etc.
+class Radix2FFT extends FFT {
+  final Float64x2List _twiddles;
+  final int _bits;
+
+  /// Constructs an FFT object with the given size.
+  ///
+  /// The size must be a power of two, eg 1, 2, 4, 8, 16 etc.
+  Radix2FFT(int powerOf2Size)
+      : _twiddles = _calculateTwiddles(powerOf2Size),
+        _bits = highestBit(powerOf2Size),super._(powerOf2Size);
+
+  static Float64x2List _calculateTwiddles(int powerOf2Size) {
+    if (!isPowerOf2(powerOf2Size)) {
+      throw ArgumentError('FFT size must be a power of 2.', 'powerOf2Size');
+    }
+    if (powerOf2Size <= 1) return Float64x2List.fromList([]);
+    if (powerOf2Size == 2) return Float64x2List.fromList([Float64x2(1, 0)]);
+    if (powerOf2Size == 4) {
+      return Float64x2List.fromList([Float64x2(1, 0), Float64x2(0, 1)]);
+    }
+    final half = powerOf2Size >>> 1;
+    final twiddles = Float64x2List(half);
+    twiddles[0] = Float64x2(1, 0);
+    final step = 2 * math.pi / powerOf2Size;
+    final quarter = half >>> 1;
+    final eighth = quarter >>> 1;
+    for (int i = 1; i < eighth; ++i) {
+      final theta = step * i;
+      twiddles[i] = Float64x2(math.cos(theta), math.sin(theta));
+    }
+    twiddles[eighth] = Float64x2(math.sqrt1_2, math.sqrt1_2);
+    for (int i = 1; i < eighth; ++i) {
+      final z = -twiddles[eighth - i];
+      twiddles[eighth + i] = Float64x2(-z.y, -z.x);
+    }
+    twiddles[quarter] = Float64x2(0, 1);
+    for (int i = 1; i < quarter; ++i) {
+      final z = twiddles[quarter - i];
+      twiddles[quarter + i] = Float64x2(-z.x, z.y);
+    }
+    return twiddles;
+  }
+
+  /// In-place FFT.
+  ///
+  /// Performs an in-place FFT on [complexArray]. The result is stored back in
+  /// [complexArray]. No new arrays are allocated by this method.
+  ///
+  /// This is the most efficient FFT method, if your data is already in the
+  /// correct format. Otherwise, you can use [realFft] to handle the conversion
+  /// for you.
+  ///
+  /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
+  /// of complex numbers.
+  void inPlaceFft(Float64x2List complexArray) {
+    final n = _size;
+    if (complexArray.length != n) {
+      throw ArgumentError('Input data is the wrong length.', 'complexArray');
+    }
+    // Bit reverse permutation.
+    final n2 = n >>> 1;
+    final shift = 64 - _bits;
+    for (int i = 0; i < n; ++i) {
+      // Calculate bit reversal.
+      int j = i;
+      j = ((j >>> 32) & 0x00000000FFFFFFFF) | (j << 32);
+      j = ((j >>> 16) & 0x0000FFFF0000FFFF) | ((j & 0x0000FFFF0000FFFF) << 16);
+      j = ((j >>> 8) & 0x00FF00FF00FF00FF) | ((j & 0x00FF00FF00FF00FF) << 8);
+      j = ((j >>> 4) & 0x0F0F0F0F0F0F0F0F) | ((j & 0x0F0F0F0F0F0F0F0F) << 4);
+      j = ((j >>> 2) & 0x3333333333333333) | ((j & 0x3333333333333333) << 2);
+      j = ((j >>> 1) & 0x5555555555555555) | ((j & 0x5555555555555555) << 1);
+      j >>>= shift;
+      // Permute.
+      if (j < i) {
+        final temp = complexArray[i];
+        complexArray[i] = complexArray[j];
+        complexArray[j] = temp;
+      }
+    }
+    // FFT main loop.
+    for (int m = 1; m < n;) {
+      final nm = n2 ~/ m;
+      for (int k = 0, t = 0; k < n;) {
+        final km = k + m;
+        final p = complexArray[k];
+        final o = complexArray[km];
+        final w = _twiddles[t];
+        final q = o.scale(w.x) + Float64x2(o.y, -o.x).scale(w.y);
+        complexArray[k] = p + q;
+        complexArray[km] = p - q;
+        ++k;
+        t += nm;
+        if (t >= n2) {
+          k += m;
+          t = 0;
+        }
+      }
+      m <<= 1;
+    }
+  }
+}
+
+/// Performs FFTs (Fast Fourier Transforms) of a particular size.
+class CompositeFFT extends FFT {
+  /// Constructs an FFT object with the given size.
+  ///
+  /// The size must be a power of two, eg 1, 2, 4, 8, 16 etc.
+  CompositeFFT(int size)
+      : super._(size);
+
+  /// In-place FFT.
+  ///
+  /// Performs an in-place FFT on [complexArray]. The result is stored back in
+  /// [complexArray]. No new arrays are allocated by this method.
+  ///
+  /// This is the most efficient FFT method, if your data is already in the
+  /// correct format. Otherwise, you can use [realFft] to handle the conversion
+  /// for you.
+  ///
+  /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
+  /// of complex numbers.
+  void inPlaceFft(Float64x2List complexArray) {}
+}
+
+// TODO: Get rid of this function.
 Float64x2List select(Float64x2List input, int stride, int offset) {
   final out = Float64x2List(input.length ~/ stride);
   for (int i = offset, j = 0; i < input.length; i += stride, ++j) {
@@ -279,14 +319,16 @@ Float64x2List select(Float64x2List input, int stride, int offset) {
   return out;
 }
 
+// TODO: Get rid of this function.
 Float64x2 compMul(Float64x2 a, Float64x2 b) {
   return Float64x2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
 }
 
+// TODO: Get rid of this function.
 Float64x2 rotor(double t) => Float64x2(math.cos(t), math.sin(t));
 Float64x2 twiddle(int n, int k) => rotor(-2 * math.pi * k / n);
 
-Float64x2List dumbRad3Fft(Float64x2List input) {
+/*Float64x2List dumbRad3Fft(Float64x2List input) {
   if (input.length == 1) return input;
   final out = Float64x2List(input.length);
   final sub0 = dumbRad3Fft(select(input, 3, 0));
@@ -304,22 +346,7 @@ Float64x2List dumbRad3Fft(Float64x2List input) {
     out[k + 2 * nn] = p + compMul(q, twiddle(input.length, 2 * nn)) + compMul(r, twiddle(input.length, 4 * nn));
   }
   return out;
-}
-
-List<int> primeDecomp(int n) {
-  final a = <int>[];
-  for (int i = 2;;) {
-    if (n % i != 0) {
-      i += 1 + (i % 2);
-      if (i * i > n) break;
-    } else {
-      a.add(i);
-      n ~/= i;
-    }
-  }
-  if (n != 1) a.add(n);
-  return a;
-}
+}*/
 
 /*Float64x2List compositeFft(Float64x2List input) {
   return compositeFftImpl(input, 1, 0, primeDecomp(input.length), 0);
@@ -396,7 +423,7 @@ void compositeFftImpl(Float64x2List input, Float64x2List buf, Float64x2List out,
   }
 }*/
 
-int digitReverse(int x, List<int> decomp) {
+/*int digitReverse(int x, List<int> decomp) {
   int y = 0;
   for (final r in decomp) {
     y *= r;
@@ -404,7 +431,7 @@ int digitReverse(int x, List<int> decomp) {
     x ~/= r;
   }
   return y;
-}
+}*/
 
 Float64x2List compositeFft(Float64x2List input) {
   final n = input.length;
@@ -417,6 +444,7 @@ Float64x2List compositeFft(Float64x2List input) {
 }
 
 void compositeFftImpl(Float64x2List input, Float64x2List buf, Float64x2List out, Float64x2List w, int n, int stride, int off, int boff, List<int> decomp, int di) {
+  // https://doi.org/10.1090/S0025-5718-1965-0178586-1
   // TODO: Rewrite as a loop rather than a recursion.
   // TODO: Can we make this inline?
   // TODO: Handle large prime factors.
@@ -441,6 +469,70 @@ void compositeFftImpl(Float64x2List input, Float64x2List buf, Float64x2List out,
       for (int k = 0; k < s; ++k) {
         out[bi + k * nn] += compMul(p, w[stride * ((j * (k * nn + i)) % n)]);
       }
+    }
+  }
+}
+
+/*Float64List circConv(List<double> a, List<double> b) {
+  final n = a.length;
+  final o = Float64List(n);
+  for (int i = 0; i < n; ++i) {
+    for (int j = 0; j < n; ++j) {
+      o[i] += a[j] * b[(i - j + n) % n];
+    }
+  }
+  return o;
+}
+
+Float64List fftConv(List<double> a, List<double> b) {
+  final fft = FFT(a.length);
+  final aa = fft.realFft(a);
+  final bb = fft.realFft(b);
+  for (int i = 0; i < a.length; ++i) {
+    aa[i] = compMul(aa[i], bb[i]);
+  }
+  return fft.realInverseFft(aa);
+}*/
+
+void primeFft(Float64x2List input) {
+  // https://doi.org/10.1109/PROC.1968.6477
+  final n = input.length;
+
+  // Primitive root permutation.
+  final g = primitiveRootOfPrime(n);
+  final n_ = n - 1;
+  // TODO: Don't zero pad if n_ is highly composite.
+  final pn = nextPowerOf2(2 * n_);
+  final a = Float64x2List(pn);
+  final b = Float64x2List(pn);
+  for (int q = 0; q < n_; ++q) {
+    final i = expMod(g, q, n);
+    a[q] = input[i];
+    final j = multiplicativeInverseOfPrime(i, n);
+    b[q] = twiddle(n, j);
+  }
+
+  // Cyclic convolution.
+  final fft = FFT(pn);  // TODO: Radix2FFT
+  fft.inPlaceFft(a);
+  fft.inPlaceFft(b);  // TODO: This can also be done at construction time.
+  for (int i = 0; i < pn; ++i) {
+    a[i] = compMul(a[i], b[i]);
+  }
+  fft.inPlaceInverseFft(a);
+
+  final x0 = input[0];
+  for (int q = 0; q < n_; ++q) {
+    final i = multiplicativeInverseOfPrime(expMod(g, q, n), n);
+
+    // First output is just the sum of all the inputs.
+    input[0] += input[i];
+
+    // Rest of the outputs are made by wrapping and summing the unpermuted
+    // convolution with the first element of the input.
+    input[i] = x0;
+    for (int j = q; j < pn; j += n_) {
+      input[i] += a[j];
     }
   }
 }
@@ -546,7 +638,7 @@ extension Window on Float64List {
   }
 
   static Float64List _fillSecondHalf(Float64List a) {
-    final half = a.length >> 1;
+    final half = a.length >>> 1;
     final n = a.length - 1;
     for (int i = 0; i < half; ++i) {
       a[n - i] = a[i];
@@ -559,7 +651,7 @@ extension Window on Float64List {
   /// `w[i] = 1 - amp - amp * cos(2πi / (size - 1))`
   static Float64List cosine(int size, double amplitude) {
     final a = Float64List(size);
-    final half = size >> 1;
+    final half = size >>> 1;
     final offset = 1 - amplitude;
     final scale = 2 * math.pi / (size - 1);
     for (int i = 0; i <= half; ++i) {
@@ -586,7 +678,7 @@ extension Window on Float64List {
   /// `w[i] = 1 - |2i / (size - 1) - 1|`
   static Float64List bartlett(int size) {
     final a = Float64List(size);
-    final half = size >> 1;
+    final half = size >>> 1;
     final offset = (size - 1) / 2;
     for (int i = 0; i <= half; ++i) {
       a[i] = 1 - (i / offset - 1).abs();
@@ -600,7 +692,7 @@ extension Window on Float64List {
   /// `w[i] = 0.42 - 0.5 * cos(2πi / (size - 1)) + 0.08 * cos(4πi / (size - 1))`
   static Float64List blackman(int size) {
     final a = Float64List(size);
-    final half = size >> 1;
+    final half = size >>> 1;
     final scale = 2 * math.pi / (size - 1);
     for (int i = 0; i <= half; ++i) {
       final t = i * scale;

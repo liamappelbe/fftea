@@ -57,4 +57,4 @@ def makeFftCase(n):
   print('final inp = [%s];' % cplxBufStr(a))
   print('final exp = [%s];' % cplxBufStr(f))
 
-makeFftCase(150)
+makeFftCase(11)
