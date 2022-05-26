@@ -166,7 +166,11 @@ final exp = [
         -99.45576496, -24.49798002, 20.97727179, 28.39457318, //
         -162.83846487, 101.67986414, 13.49637236, -15.52157812,
       ];
-    final out = compositeFft(makeArray(inp));
+    print("GOOD");
+    compositeFft(makeArray(inp));
+    print('\n\nBAD');
+    final out = makeArray(inp);
+    CompositeFFT(out.length).inPlaceFft(out);
     //print(out);
     expectClose(toFloats(out), exp);
   });
@@ -192,6 +196,29 @@ final exp = [
     PrimePaddedFFT(out.length).inPlaceFft(out);
     expectClose(toFloats(out), exp);
   });
+
+  /*test('prime strided FFT', () {
+final inp = [
+        -8.62789495, 5.85539056, 0.0, 0.0, 3.19853546, 9.71930666, 0.0, 0.0, //
+        0.21157144, -7.71712852, 0.0, 0.0, 8.97832440, -5.71433990, 0.0, 0.0, //
+        5.02641968, -8.03952519, 0.0, 0.0, 7.10462549, -0.23394908, 0.0, 0.0, //
+        9.80845936, 6.40732978, 0.0, 0.0, 9.93739231, 9.42287662, 0.0, 0.0, //
+        8.85897813, 8.89862082, 0.0, 0.0, 8.36320156, -5.09432730, 0.0, 0.0, //
+        -3.85895797, 9.51769029, 0.0, 0.0,
+      ];
+final exp = [
+        0.0, 0.0, 0.0, 0.0, 49.00065490, 23.02194475, 0.0, 0.0, 0.0, 0.0, -65.99637102, 17.38862932, //
+        0.0, 0.0, 0.0, 0.0, 3.65969569, 17.62936290, 0.0, 0.0, 0.0, 0.0, -8.06793523, 9.37884187, //
+        0.0, 0.0, 0.0, 0.0, -5.77225097, -15.54570881, 0.0, 0.0, 0.0, 0.0, -8.91067030, -34.04570520, //
+        0.0, 0.0, 0.0, 0.0, -8.39414156, -17.49272397, 0.0, 0.0, 0.0, 0.0, 2.28873708, 13.53987583, //
+        0.0, 0.0, 0.0, 0.0, -7.60969212, 18.32920822, 0.0, 0.0, 0.0, 0.0, -42.72704181, 30.72595505, //
+        0.0, 0.0, 0.0, 0.0, -2.37782915, 1.47961620,
+      ];
+    final input = makeArray(inp);
+    final out = Float64x2List(exp.length ~/ 2);
+    PrimePaddedFFT(input.length ~/ 2).stridedFft(input, 2, 0, out, 3, 2);
+    expectClose(toFloats(out), exp);
+  });*/
 
   test('naive FFT', () {
 final inp = [
@@ -234,7 +261,7 @@ final exp = [
       ];
     final input = makeArray(inp);
     final out = Float64x2List(exp.length ~/ 2);
-    NaiveFFT(input.length ~/ 2).fft(input, 2, 0, out, 3, 2);
+    NaiveFFT(input.length ~/ 2).stridedFft(input, 2, 0, out, 3, 2);
     expectClose(toFloats(out), exp);
   });*/
 }

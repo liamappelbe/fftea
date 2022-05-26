@@ -17,6 +17,11 @@ import 'dart:typed_data';
 
 import 'util.dart';
 
+extension Complex on Float64x2 {
+  double get squareMagnitude => x * x + y * y;
+  double get magnitude => math.sqrt(squareMagnitude);
+}
+
 /// Extension methods for [Float64x2List], representing a list of complex
 /// numbers.
 extension ComplexArray on Float64x2List {
@@ -95,6 +100,7 @@ abstract class FFT {
       throw ArgumentError('FFT size must be greater than 0.', 'size');
     }
     // TODO: Is NaiveFFT faster than Radix2FFT for small enough sizes?
+    // TODO: Is it more efficient to have a specific FFT for 2 and 3?
     if (isPow2) {
       return Radix2FFT(size);
     }
@@ -257,17 +263,6 @@ class Radix2FFT extends FFT {
     return twiddles;
   }
 
-  /// In-place FFT.
-  ///
-  /// Performs an in-place FFT on [complexArray]. The result is stored back in
-  /// [complexArray]. No new arrays are allocated by this method.
-  ///
-  /// This is the most efficient FFT method, if your data is already in the
-  /// correct format. Otherwise, you can use [realFft] to handle the conversion
-  /// for you.
-  ///
-  /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
-  /// of complex numbers.
   @override
   void _inPlaceFftImpl(Float64x2List complexArray) {
     // Bit reverse permutation.
@@ -338,17 +333,6 @@ class NaiveFFT extends _StridedFFT {
     }
   }
 
-  /// In-place FFT.
-  ///
-  /// Performs an in-place FFT on [complexArray]. The result is stored back in
-  /// [complexArray]. No new arrays are allocated by this method.
-  ///
-  /// This is the most efficient FFT method, if your data is already in the
-  /// correct format. Otherwise, you can use [realFft] to handle the conversion
-  /// for you.
-  ///
-  /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
-  /// of complex numbers.
   @override
   void _inPlaceFftImpl(Float64x2List complexArray) {
     _stridedFft(complexArray, 1, 0, _buf, 1, 0);
@@ -359,15 +343,93 @@ class NaiveFFT extends _StridedFFT {
   @override
   void _stridedFft(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff) {
     final x0 = inp[ioff];
+    for (int io = ooff, st = 0; st < _size; io += ostride, ++st) {
+      out[io] = x0;
+    }
+    ioff += istride;
+    for (int ii = ioff, ji = 1; ji < _size; ii += istride, ++ji) {
+      final p = inp[ii];
+      for (int io = ooff, st = 0, jj = 0; st < _size; io += ostride, ++st, jj += ji) {
+        out[io] += compMul(p, _twiddles[jj % _size]);
+      }
+    }
+  }
+
+  void _stridedFft2(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff, Float64x2List w, int wstride, int woff, int wwrap, Float64x2 wex) {
+    final x0 = inp[ioff];
     for (int io = ooff, st = 0; io < out.length; io += ostride, ++st) {
       out[io] = x0;
     }
     ioff += istride;
-    for (int ii = ioff, ji = 1; ii < inp.length; ii += istride, ++ji) {
+    for (int ii = ioff, ji = 1; ji < _size; ii += istride, ++ji) {
       final p = inp[ii];
-      for (int io = ooff, jj = 0; io < out.length; io += ostride, jj += ji) {
-        out[io] += compMul(p, _twiddles[jj % _size]);
+      for (int io = ooff, jj = 0, k = 0; k < _size; io += ostride, jj += ji, ++k) {
+        //out[io] += compMul(p, _twiddles[jj % _size]);
+        final wi = wstride * ((ji * (k * istride + woff)) % wwrap);
+        if (((w[wi] - compMul(_twiddles[jj % _size], wex)).magnitude > 0.0001) && _qtotal < 20) {
+          ++_qtotal;
+          print('$wstride,\t$ji,\t$k,\t$istride,\t$woff,\t$wwrap,\t$wi,\t${w[wi]}\t\t\t$_size,\t$jj,\t${jj % _size},\t${_twiddles[jj % _size]},\t$wex,\t${compMul(_twiddles[jj % _size], wex)}');
+        }
+        out[io] += compMul(p, w[wi]);
       }
+    }
+  }
+}
+int _qtotal = 0;
+
+/// Performs FFTs (Fast Fourier Transforms) of a particular size.
+class CompositeFFT extends FFT {
+  final Float64x2List _buf;
+  final Float64x2List _out;
+  final _ffts = <NaiveFFT>[];
+
+  /// Constructs an FFT object with the given size.
+  CompositeFFT(int size) : _buf = Float64x2List(size), _out = Float64x2List(size), super._(size) {
+    for (final p in primeDecomp(size)) {
+      _ffts.add(FFT._makeFFTCached(p, false, true) as NaiveFFT);
+    }
+  }
+
+  @override
+  void _inPlaceFftImpl(Float64x2List complexArray) {
+  Float64x2List w = Float64x2List(_size);
+  for (int i = 0; i < _size; ++i) w[i] = twiddle(_size, i);
+    _inPlaceFftRecursive(complexArray, _buf, _out, w, _size, 1, 0, 0, 0);
+    complexArray.setAll(0, _out);
+  }
+
+  void _inPlaceFftRecursive(Float64x2List input, Float64x2List buf, Float64x2List out, Float64x2List w, int n, int stride, int off, int boff, int di) {
+    // https://doi.org/10.1090/S0025-5718-1965-0178586-1
+    if (di >= _ffts.length) {
+      out[boff] = input[off];
+      return;
+    }
+    final fft = _ffts[di];
+    final s = fft.size;
+    final ss = s * stride;
+    final nn = n ~/ s;
+    for (int i = 0; i < s; ++i) {
+      _inPlaceFftRecursive(input, out, buf, w, nn, ss, i * stride + off, boff + i * nn, di + 1);
+    }
+    //fft._stridedFft(buf, nn, boff, out, nn, boff);
+    /*for (int i = 0; i < nn; ++i) {
+      final bi = boff + i;
+      for (int j = 0; j < s; ++j) {
+        out[bi + j * nn] = buf[bi];
+      }
+      for (int j = 1; j < s; ++j) {
+        final p = buf[bi + j * nn];
+        for (int k = 0; k < s; ++k) {
+          out[bi + k * nn] += compMul(p, w[stride * ((j * (k * nn + i)) % n)]);
+        }
+      }
+    }*/
+    if (_qtotal < 20) print('$n,\t$stride,\t$off,\t$boff,\t$di,\t$s,\t$ss,\t$nn');
+    for (int i = 0; i < nn; ++i) {
+      final bi = boff + i;
+      if (_qtotal < 20) print('$i,\t$bi');
+      fft._stridedFft2(buf, nn, bi, out, nn, bi, w, stride, i, n, twiddle(n, i));
+      //fft._stridedFft(buf, nn, bi, out, nn, bi);
     }
   }
 }
@@ -387,7 +449,7 @@ class PrimePaddedFFT extends _StridedFFT {
       _pn = pn,
       _a = Float64x2List(pn),
       _b = Float64x2List(pn),
-      _fft = Radix2FFT(pn),
+      _fft = FFT._makeFFTCached(pn, true, false) as Radix2FFT,
       super._(size) {
     final n_ = size - 1;
     for (int q = 0; q < n_; ++q) {
@@ -402,17 +464,6 @@ class PrimePaddedFFT extends _StridedFFT {
   /// The size must be a prime number, eg 2, 3, 5, 7, 11 etc.
   PrimePaddedFFT(int size) : this._(size, nextPowerOf2((size - 1) << 1));
 
-  /// In-place FFT.
-  ///
-  /// Performs an in-place FFT on [complexArray]. The result is stored back in
-  /// [complexArray]. No new arrays are allocated by this method.
-  ///
-  /// This is the most efficient FFT method, if your data is already in the
-  /// correct format. Otherwise, you can use [realFft] to handle the conversion
-  /// for you.
-  ///
-  /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
-  /// of complex numbers.
   @override
   void _inPlaceFftImpl(Float64x2List complexArray) {
     _stridedFft(complexArray, 1, 0, complexArray, 1, 0);
@@ -457,28 +508,6 @@ class PrimePaddedFFT extends _StridedFFT {
   }
 }
 
-/// Performs FFTs (Fast Fourier Transforms) of a particular size.
-class CompositeFFT extends FFT {
-  /// Constructs an FFT object with the given size.
-  CompositeFFT(int size) : super._(size);
-
-  /// In-place FFT.
-  ///
-  /// Performs an in-place FFT on [complexArray]. The result is stored back in
-  /// [complexArray]. No new arrays are allocated by this method.
-  ///
-  /// This is the most efficient FFT method, if your data is already in the
-  /// correct format. Otherwise, you can use [realFft] to handle the conversion
-  /// for you.
-  ///
-  /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
-  /// of complex numbers.
-  @override
-  void _inPlaceFftImpl(Float64x2List complexArray) {
-    // https://doi.org/10.1090/S0025-5718-1965-0178586-1
-  }
-}
-
 // TODO: Get rid of this function.
 Float64x2 compMul(Float64x2 a, Float64x2 b) {
   return Float64x2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
@@ -498,6 +527,7 @@ Float64x2List compositeFft(Float64x2List input) {
   return out;
 }
 
+int _ptotal = 0;
 void compositeFftImpl(Float64x2List input, Float64x2List buf, Float64x2List out, Float64x2List w, int n, int stride, int off, int boff, List<int> decomp, int di) {
   // https://doi.org/10.1090/S0025-5718-1965-0178586-1
   // TODO: Rewrite as a loop rather than a recursion.
@@ -514,15 +544,22 @@ void compositeFftImpl(Float64x2List input, Float64x2List buf, Float64x2List out,
   for (int i = 0; i < s; ++i) {
     compositeFftImpl(input, out, buf, w, nn, ss, i * stride + off, boff + i * nn, decomp, di + 1);
   }
+  if (_ptotal < 20) print('$n,\t$stride,\t$off,\t$boff,\t$di,\t$s,\t$ss,\t$nn');
   for (int i = 0; i < nn; ++i) {
     final bi = boff + i;
+    if (_ptotal < 20) print('$i,\t$bi');
     for (int j = 0; j < s; ++j) {
       out[bi + j * nn] = buf[bi];
     }
     for (int j = 1; j < s; ++j) {
       final p = buf[bi + j * nn];
       for (int k = 0; k < s; ++k) {
-        out[bi + k * nn] += compMul(p, w[stride * ((j * (k * nn + i)) % n)]);
+        final wi = stride * ((j * (k * nn + i)) % n);
+        if (_ptotal < 20) {
+          ++_ptotal;
+          print('$stride,\t$j,\t$k,\t$nn,\t$i,\t$n,\t$wi');
+        }
+        out[bi + k * nn] += compMul(p, w[wi]);
       }
     }
   }
