@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:math' as math;
+import 'dart:typed_data';
+
 /// Returns whether x is a power of two: 1, 2, 4, 8, ...
 bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
 
@@ -19,9 +22,9 @@ class Primes {
   final _p = <int>[2, 3, 5, 7];
   int _n = 9;
   bool _isPrime(int n) {
-    for (final m in _p) {
-      if (n % m == 0) return false;
-      if (m * m > n) return true;
+    for (final p in _p) {
+      if (p * p > n) return true;
+      if (n % p == 0) return false;
     }
     return true;
   }
@@ -41,7 +44,21 @@ class Primes {
 }
 final primes = Primes();
 
+bool isPrime(int n) {
+  // TODO: Maybe implement Baillie–PSW?
+  for (int i = 0, p = 2;;) {
+    if (p * p > n) return true;
+    if (n % p == 0) return false;
+    i += 1;
+    p = primes.getPrime(i);
+  }
+}
+
 List<int> primeDecomp(int n) {
+  // TODO: Fix edge case where n is a large prime, and this function will store
+  // all the prime numbers up to that prime in primes. Instead, explicitly check
+  // if n is prime each time we divide it (or only do this once i>100 or
+  // something). This will mean we only store primes up to sqrt(n).
   final a = <int>[];
   for (int i = 0, p = 2;;) {
     if (n % p != 0) {
@@ -49,6 +66,26 @@ List<int> primeDecomp(int n) {
       p = primes.getPrime(i);
     } else {
       a.add(p);
+      n ~/= p;
+      if (n == 1) break;
+    }
+  }
+  return a;
+}
+
+List<int> primeFactors(int n) {
+  bool newp = true;
+  final a = <int>[];
+  for (int i = 0, p = 2;;) {
+    if (n % p != 0) {
+      i += 1;
+      p = primes.getPrime(i);
+      newp = true;
+    } else {
+      if (newp) {
+        a.add(p);
+        newp = false;
+      }
       n ~/= p;
       if (n == 1) break;
     }
@@ -75,26 +112,6 @@ int nextPowerOf2(int x) {
   x |= x >> 32;
   ++x;
   return x;
-}
-
-List<int> primeFactors(int n) {
-  bool newp = true;
-  final a = <int>[];
-  for (int i = 0, p = 2;;) {
-    if (n % p != 0) {
-      i += 1;
-      p = primes.getPrime(i);
-      newp = true;
-    } else {
-      if (newp) {
-        a.add(p);
-        newp = false;
-      }
-      n ~/= p;
-      if (n == 1) break;
-    }
-  }
-  return a;
 }
 
 // Returns the primitive root of n. WARNING: Assumes n is a prime > 2.
@@ -155,4 +172,15 @@ int eulersTotient(int n) {
 // Returns the multiplicative inverse of x mod n, where n is a prime.
 int multiplicativeInverseOfPrime(int x, int n) {
   return expMod(x, n - 2, n);
+}
+
+Float64x2List twiddleFactors(int size) {
+  final w = Float64x2List(size);
+  final dt = -2 * math.pi / size;
+  // TODO: Use reflection to halve the number of terms calculated.
+  for (int i = 0; i < size; ++i) {
+    final t = i * dt;
+    w[i] = Float64x2(math.cos(t), math.sin(t));
+  }
+  return w;
 }
