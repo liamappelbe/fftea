@@ -173,14 +173,3 @@ int eulersTotient(int n) {
 int multiplicativeInverseOfPrime(int x, int n) {
   return expMod(x, n - 2, n);
 }
-
-Float64x2List twiddleFactors(int size) {
-  final w = Float64x2List(size);
-  final dt = -2 * math.pi / size;
-  // TODO: Use reflection to halve the number of terms calculated.
-  for (int i = 0; i < size; ++i) {
-    final t = i * dt;
-    w[i] = Float64x2(math.cos(t), math.sin(t));
-  }
-  return w;
-}

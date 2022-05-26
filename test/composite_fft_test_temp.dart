@@ -189,7 +189,7 @@ final exp = [
         -2.37782915, 1.47961620,
       ];
     final out = makeArray(inp);
-    primeFft(out);
+    PrimePaddedFFT(out.length).inPlaceFft(out);
     expectClose(toFloats(out), exp);
   });
 

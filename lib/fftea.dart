@@ -102,6 +102,7 @@ abstract class FFT {
       return NaiveFFT(size);
     }
     if (isPrime) {
+      // TODO: Don't zero pad if (size - 1) is highly composite.
       return PrimePaddedFFT(size);
     }
     return CompositeFFT(size);
@@ -130,7 +131,14 @@ abstract class FFT {
   ///
   /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
   /// of complex numbers.
-  void inPlaceFft(Float64x2List complexArray);
+  void inPlaceFft(Float64x2List complexArray) {
+    if (complexArray.length != _size) {
+      throw ArgumentError('Input data is the wrong length.', 'complexArray');
+    }
+    _inPlaceFftImpl(complexArray);
+  }
+
+  void _inPlaceFftImpl(Float64x2List complexArray);
 
   /// Real-valued FFT.
   ///
@@ -261,12 +269,9 @@ class Radix2FFT extends FFT {
   /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
   /// of complex numbers.
   @override
-  void inPlaceFft(Float64x2List complexArray) {
-    final n = _size;
-    if (complexArray.length != n) {
-      throw ArgumentError('Input data is the wrong length.', 'complexArray');
-    }
+  void _inPlaceFftImpl(Float64x2List complexArray) {
     // Bit reverse permutation.
+    final n = _size;
     final n2 = n >>> 1;
     final shift = 64 - _bits;
     for (int i = 0; i < n; ++i) {
@@ -310,11 +315,28 @@ class Radix2FFT extends FFT {
 }
 
 abstract class _StridedFFT extends FFT {
+  _StridedFFT._(int size) : super._(size);
+
+  // Note: inp and out may or may not need to be distinct. If you don't know the
+  // underlying implementation, assume they need to be distinct.
+  void _stridedFft(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff);
+}
+
+/// Performs FFTs (Fast Fourier Transforms) of a particular size.
+class NaiveFFT extends _StridedFFT {
+  final Float64x2List _twiddles;
   final Float64x2List _buf;
 
-  _StridedFFT._(int size) : _buf = Float64x2List(size), super._(size);
-
-  void _stridedFft(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff);
+  /// Constructs an FFT object with the given size.
+  NaiveFFT(int size) : _twiddles = Float64x2List(size), _buf = Float64x2List(size), super._(size) {
+    final dt = -2 * math.pi / size;
+    _twiddles[0] = Float64x2(1, 0);
+    // TODO: Use reflection to halve the number of terms calculated.
+    for (int i = 1; i < size; ++i) {
+      final t = i * dt;
+      _twiddles[i] = Float64x2(math.cos(t), math.sin(t));
+    }
+  }
 
   /// In-place FFT.
   ///
@@ -328,21 +350,10 @@ abstract class _StridedFFT extends FFT {
   /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
   /// of complex numbers.
   @override
-  void inPlaceFft(Float64x2List complexArray) {
-    if (complexArray.length != _size) {
-      throw ArgumentError('Input data is the wrong length.', 'complexArray');
-    }
+  void _inPlaceFftImpl(Float64x2List complexArray) {
     _stridedFft(complexArray, 1, 0, _buf, 1, 0);
     complexArray.setAll(0, _buf);
   }
-}
-
-/// Performs FFTs (Fast Fourier Transforms) of a particular size.
-class NaiveFFT extends _StridedFFT {
-  final Float64x2List _twiddles;
-
-  /// Constructs an FFT object with the given size.
-  NaiveFFT(int size) : _twiddles = twiddleFactors(size), super._(size);
 
   // Note: inp and out must be distinct.
   @override
@@ -362,12 +373,88 @@ class NaiveFFT extends _StridedFFT {
 }
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.
+///
+/// The size must be a prime number, eg 2, 3, 5, 7, 11 etc.
 class PrimePaddedFFT extends _StridedFFT {
-  /// Constructs an FFT object with the given size.
-  PrimePaddedFFT(int size) : super._(size);
+  final int _g;
+  final int _pn;
+  final Float64x2List _a;
+  final Float64x2List _b;
+  final Radix2FFT _fft;
 
+  PrimePaddedFFT._(int size, int pn) :
+      _g = primitiveRootOfPrime(size),
+      _pn = pn,
+      _a = Float64x2List(pn),
+      _b = Float64x2List(pn),
+      _fft = Radix2FFT(pn),
+      super._(size) {
+    final n_ = size - 1;
+    for (int q = 0; q < n_; ++q) {
+      final j = multiplicativeInverseOfPrime(expMod(_g, q, size), size);
+      _b[q] = twiddle(size, j);
+    }
+    _fft._inPlaceFftImpl(_b);
+  }
+
+  /// Constructs an FFT object with the given size.
+  ///
+  /// The size must be a prime number, eg 2, 3, 5, 7, 11 etc.
+  PrimePaddedFFT(int size) : this._(size, nextPowerOf2((size - 1) << 1));
+
+  /// In-place FFT.
+  ///
+  /// Performs an in-place FFT on [complexArray]. The result is stored back in
+  /// [complexArray]. No new arrays are allocated by this method.
+  ///
+  /// This is the most efficient FFT method, if your data is already in the
+  /// correct format. Otherwise, you can use [realFft] to handle the conversion
+  /// for you.
+  ///
+  /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
+  /// of complex numbers.
   @override
-  void _stridedFft(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff) {}
+  void _inPlaceFftImpl(Float64x2List complexArray) {
+    _stridedFft(complexArray, 1, 0, complexArray, 1, 0);
+  }
+
+  // Note: inp and out don't have to be distinct.
+  @override
+  void _stridedFft(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff) {
+    // https://doi.org/10.1109/PROC.1968.6477
+    // Primitive root permutation.
+    final n_ = _size - 1;
+    for (int q = 0; q < n_; ++q) {
+      final i = expMod(_g, q, _size);
+      _a[q] = inp[i * istride + ioff];
+    }
+    _a.fillRange(n_, _a.length, Float64x2.zero());
+
+    // Cyclic convolution.
+    _fft._inPlaceFftImpl(_a);
+    for (int i = 0; i < _pn; ++i) {
+      _a[i] = compMul(_a[i], _b[i]);
+    }
+    _fft.inPlaceInverseFft(_a);
+
+    // Unpermute and store in out.
+    final x0 = inp[ioff];
+    out[ooff] = x0;
+    for (int q = 0; q < n_; ++q) {
+      final i = multiplicativeInverseOfPrime(expMod(_g, q, _size), _size);
+
+      // First output is just the sum of all the inputs.
+      out[ooff] += inp[i * istride + ioff];
+
+      // Rest of the outputs are made by wrapping and summing the unpermuted
+      // convolution with the first element of the input.
+      final oi = i * ostride + ooff;
+      out[oi] = x0;
+      for (int j = q; j < _pn; j += n_) {
+        out[oi] += _a[j];
+      }
+    }
+  }
 }
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.
@@ -387,7 +474,9 @@ class CompositeFFT extends FFT {
   /// [ComplexArray] also has some useful methods for managing [Float64x2List]s
   /// of complex numbers.
   @override
-  void inPlaceFft(Float64x2List complexArray) {}
+  void _inPlaceFftImpl(Float64x2List complexArray) {
+    // https://doi.org/10.1090/S0025-5718-1965-0178586-1
+  }
 }
 
 // TODO: Get rid of this function.
@@ -435,49 +524,6 @@ void compositeFftImpl(Float64x2List input, Float64x2List buf, Float64x2List out,
       for (int k = 0; k < s; ++k) {
         out[bi + k * nn] += compMul(p, w[stride * ((j * (k * nn + i)) % n)]);
       }
-    }
-  }
-}
-
-void primeFft(Float64x2List input) {
-  // https://doi.org/10.1109/PROC.1968.6477
-  final n = input.length;
-
-  // Primitive root permutation.
-  final g = primitiveRootOfPrime(n);
-  final n_ = n - 1;
-  // TODO: Don't zero pad if n_ is highly composite.
-  final pn = nextPowerOf2(2 * n_);
-  final a = Float64x2List(pn);
-  final b = Float64x2List(pn);
-  for (int q = 0; q < n_; ++q) {
-    final i = expMod(g, q, n);
-    a[q] = input[i];
-    final j = multiplicativeInverseOfPrime(i, n);
-    b[q] = twiddle(n, j);
-  }
-
-  // Cyclic convolution.
-  final fft = FFT(pn);  // TODO: Radix2FFT
-  fft.inPlaceFft(a);
-  fft.inPlaceFft(b);  // TODO: This can also be done at construction time.
-  for (int i = 0; i < pn; ++i) {
-    a[i] = compMul(a[i], b[i]);
-  }
-  fft.inPlaceInverseFft(a);
-
-  final x0 = input[0];
-  for (int q = 0; q < n_; ++q) {
-    final i = multiplicativeInverseOfPrime(expMod(g, q, n), n);
-
-    // First output is just the sum of all the inputs.
-    input[0] += input[i];
-
-    // Rest of the outputs are made by wrapping and summing the unpermuted
-    // convolution with the first element of the input.
-    input[i] = x0;
-    for (int j = q; j < pn; j += n_) {
-      input[i] += a[j];
     }
   }
 }
@@ -665,7 +711,7 @@ class STFT {
         }
       }
       _win?.inPlaceApplyWindow(_chunk);
-      _fft.inPlaceFft(_chunk);
+      _fft._inPlaceFftImpl(_chunk);
       reportChunk(_chunk);
       if (i2 >= input.length) {
         break;
