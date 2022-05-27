@@ -166,9 +166,9 @@ final exp = [
         -99.45576496, -24.49798002, 20.97727179, 28.39457318, //
         -162.83846487, 101.67986414, 13.49637236, -15.52157812,
       ];
-    print("GOOD");
-    compositeFft(makeArray(inp));
-    print('\n\nBAD');
+    //print("GOOD");
+    //compositeFft(makeArray(inp));
+    //print('\n\nBAD');
     final out = makeArray(inp);
     CompositeFFT(out.length).inPlaceFft(out);
     //print(out);
