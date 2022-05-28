@@ -323,12 +323,11 @@ class NaiveFFT extends _StridedFFT {
   final Float64x2List _buf;
 
   /// Constructs an FFT object with the given size.
-  NaiveFFT(int size) : _twiddles = Float64x2List(size), _buf = Float64x2List(size), super._(size) {
+  NaiveFFT(int size, [double woff = 0]) : _twiddles = Float64x2List(size), _buf = Float64x2List(size), super._(size) {
     final dt = -2 * math.pi / size;
-    _twiddles[0] = Float64x2(1, 0);
     // TODO: Use reflection to halve the number of terms calculated.
-    for (int i = 1; i < size; ++i) {
-      final t = i * dt;
+    for (int i = 0; i < size; ++i) {
+      final t = woff + i * dt;
       _twiddles[i] = Float64x2(math.cos(t), math.sin(t));
     }
   }
@@ -349,7 +348,7 @@ class NaiveFFT extends _StridedFFT {
     ioff += istride;
     for (int ii = ioff, ji = 1; ji < _size; ii += istride, ++ji) {
       final p = inp[ii];
-      for (int io = ooff, st = 0, jj = 0; st < _size; io += ostride, ++st, jj += ji) {
+      for (int io = ooff, jj = 0, k = 0; k < _size; io += ostride, jj += ji, ++k) {
         out[io] += compMul(p, _twiddles[jj % _size]);
       }
     }
@@ -377,18 +376,17 @@ class _CompositeFFTJob {
   final Float64x2List buf;
   final Float64x2List out;
   final int n;
-  final int stride;
-  final int off;
-  final int boff;
   final int s;
-  final int ss;
   final int nn;
   final int i;
   final int bi;
   final NaiveFFT fft;
-  _CompositeFFTJob(this.buf, this.out, this.n, this.stride, this.off, this.boff, this.s, this.ss, this.nn, this.i, this.bi) : fft = FFT._makeFFTCached(s, false, true) as NaiveFFT;
+  _CompositeFFTJob(this.buf, this.out, this.n, this.s, this.nn, this.i, this.bi)
+      //: fft = FFT._makeFFTCached(s, false, true) as NaiveFFT;
+      : fft = NaiveFFT(s, 2 * math.pi * i * 0);
   void run() {
     fft._stridedFft2(buf, nn, bi, out, nn, bi, twiddle(n, i));
+    //fft._stridedFft(buf, nn, bi, out, nn, bi);
   }
 }
 
@@ -429,7 +427,7 @@ class CompositeFFT extends FFT {
     final ffts = _ffts[di];
     for (int i = 0; i < nn; ++i) {
       final bi = boff + i;
-      ffts.add(_CompositeFFTJob(buf, out, n, stride, off, boff, s, ss, nn, i, bi));
+      ffts.add(_CompositeFFTJob(buf, out, n, s, nn, i, bi));
     }
   }
 
