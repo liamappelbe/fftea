@@ -94,7 +94,7 @@ abstract class FFT {
   FFT._(this._size);
 
   // TODO: Tune this threshold. When is PrimePaddedFFT faster than NaiveFFT?
-  static const _kNaiveThreshold = 16;
+  static const _kNaiveThreshold = 4;
   static FFT _makeFFT(int size, bool isPow2, bool isPrime) {
     if (size <= 0) {
       throw ArgumentError('FFT size must be greater than 0.', 'size');
@@ -307,6 +307,9 @@ class Radix2FFT extends FFT {
       m <<= 1;
     }
   }
+
+  @override
+  String toString() => 'Radix2FFT($_size)';
 }
 
 abstract class _StridedFFT extends FFT {
@@ -314,7 +317,7 @@ abstract class _StridedFFT extends FFT {
 
   // Note: inp and out may or may not need to be distinct. If you don't know the
   // underlying implementation, assume they need to be distinct.
-  void _stridedFft(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff);
+  void _stridedFft(Float64x2List inp, Float64x2List out, int stride, int off, Float64x2List? w, int wstride);
 }
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.
@@ -323,50 +326,37 @@ class NaiveFFT extends _StridedFFT {
   final Float64x2List _buf;
 
   /// Constructs an FFT object with the given size.
-  NaiveFFT(int size, [double woff = 0]) : _twiddles = Float64x2List(size), _buf = Float64x2List(size), super._(size) {
-    final dt = -2 * math.pi / size;
-    // TODO: Use reflection to halve the number of terms calculated.
-    for (int i = 0; i < size; ++i) {
-      final t = woff + i * dt;
-      _twiddles[i] = Float64x2(math.cos(t), math.sin(t));
-    }
-  }
+  NaiveFFT(int size) : _twiddles = twiddleFactors(size), _buf = Float64x2List(size), super._(size) {}
 
   @override
   void _inPlaceFftImpl(Float64x2List complexArray) {
-    _stridedFft(complexArray, 1, 0, _buf, 1, 0);
+    _stridedFft(complexArray, _buf, 1, 0, null, 0);
     complexArray.setAll(0, _buf);
   }
 
   // Note: inp and out must be distinct.
   @override
-  void _stridedFft(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff) {
-    final x0 = inp[ioff];
-    for (int io = ooff, st = 0; st < _size; io += ostride, ++st) {
+  void _stridedFft(Float64x2List inp, Float64x2List out, int stride, int off, Float64x2List? w, int wstride) {
+    final x0 = inp[off];
+    for (int io = off, st = 0; st < _size; io += stride, ++st) {
       out[io] = x0;
     }
-    ioff += istride;
-    for (int ii = ioff, ji = 1; ji < _size; ii += istride, ++ji) {
+    final ioff = off + stride;
+    if (w != null) {
+      for (int ii = ioff, ji = 1; ji < _size; ii += stride, ++ji) {
+        inp[ii] = compMul(inp[ii], w[(ji * wstride) % w.length]);
+      }
+    }
+    for (int ii = ioff, ji = 1; ji < _size; ii += stride, ++ji) {
       final p = inp[ii];
-      for (int io = ooff, jj = 0, k = 0; k < _size; io += ostride, jj += ji, ++k) {
+      for (int io = off, jj = 0, k = 0; k < _size; io += stride, jj += ji, ++k) {
         out[io] += compMul(p, _twiddles[jj % _size]);
       }
     }
   }
 
-  void _stridedFft2(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff, int wn, int wi, int wns) {
-    final x0 = inp[ioff];
-    for (int io = ooff, st = 0; io < out.length; io += ostride, ++st) {
-      out[io] = x0;
-    }
-    ioff += istride;
-    for (int ii = ioff, ji = 1; ji < _size; ii += istride, ++ji) {
-      final p = compMul(inp[ii], twiddle(wn, ji * wi));
-      for (int io = ooff, jj = 0, k = 0; k < _size; io += ostride, jj += ji, ++k) {
-        out[io] += compMul(p, _twiddles[jj % _size]);
-      }
-    }
-  }
+  @override
+  String toString() => 'NaiveFFT($_size)';
 }
 int _qtotal = 0;
 
@@ -378,14 +368,12 @@ class _CompositeFFTJob {
   final int nn;
   final int i;
   final int bi;
-  final NaiveFFT fft;
-  _CompositeFFTJob(this.buf, this.out, this.n, this.s, this.nn, this.i, this.bi)
-      //: fft = FFT._makeFFTCached(s, false, true) as NaiveFFT;
-      : fft = NaiveFFT(s, 2 * math.pi * i * 0) {
-  }
+  final Float64x2List w;
+  final _StridedFFT fft;
+  _CompositeFFTJob(this.buf, this.out, this.n, this.s, this.nn, this.i, this.bi, this.w)
+      : fft = FFT._makeFFTCached(s, false, true) as _StridedFFT;
   void run() {
-    fft._stridedFft2(buf, nn, bi, out, nn, bi, n, i, n ~/ fft._size);
-    //fft._stridedFft(buf, nn, bi, out, nn, bi);
+    fft._stridedFft(buf, out, nn, bi, w, i);
   }
 }
 
@@ -393,12 +381,13 @@ class _CompositeFFTJob {
 class CompositeFFT extends FFT {
   final Float64x2List _buf;
   final Float64x2List _out;
+  final Float64x2List _twiddles;
   late final Float64x2List _innerBuf;
   final Uint64List _perm;
   final _ffts = <List<_CompositeFFTJob>>[];
 
   /// Constructs an FFT object with the given size.
-  CompositeFFT(int size) : _buf = Float64x2List(size), _out = Float64x2List(size), _perm = Uint64List(size), super._(size) {
+  CompositeFFT(int size) : _buf = Float64x2List(size), _out = Float64x2List(size), _twiddles = twiddleFactors(size), _perm = Uint64List(size), super._(size) {
     // TODO: Investigate combining the smaller factors into larger factors that
     // are still smaller than the _kNaiveThreshold. Is this faster?
     final decomp = primeDecomp(size);
@@ -426,7 +415,7 @@ class CompositeFFT extends FFT {
     final ffts = _ffts[di];
     for (int i = 0; i < nn; ++i) {
       final bi = boff + i;
-      ffts.add(_CompositeFFTJob(buf, out, n, s, nn, i, bi));
+      ffts.add(_CompositeFFTJob(buf, out, n, s, nn, i * stride, bi, _twiddles));
     }
   }
 
@@ -447,6 +436,9 @@ class CompositeFFT extends FFT {
 
     complexArray.setAll(0, _out);
   }
+
+  @override
+  String toString() => 'CompositeFFT($_size)';
 
   /*void _inPlaceFftRecursive(Float64x2List input, Float64x2List buf, Float64x2List out, Float64x2List w, int n, int stride, int off, int boff, int di) {
     // https://doi.org/10.1090/S0025-5718-1965-0178586-1
@@ -501,18 +493,23 @@ class PrimePaddedFFT extends _StridedFFT {
 
   @override
   void _inPlaceFftImpl(Float64x2List complexArray) {
-    _stridedFft(complexArray, 1, 0, complexArray, 1, 0);
+    _stridedFft(complexArray, complexArray, 1, 0, null, 0);
   }
 
   // Note: inp and out don't have to be distinct.
   @override
-  void _stridedFft(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff) {
+  void _stridedFft(Float64x2List inp, Float64x2List out, int stride, int off, Float64x2List? w, int wstride) {
     // https://doi.org/10.1109/PROC.1968.6477
     // Primitive root permutation.
     final n_ = _size - 1;
+    if (w != null) {
+      for (int ii = off + stride, ji = 1; ji < _size; ii += stride, ++ji) {
+        inp[ii] = compMul(inp[ii], w[(ji * wstride) % w.length]);
+      }
+    }
     for (int q = 0; q < n_; ++q) {
       final i = expMod(_g, q, _size);
-      _a[q] = inp[i * istride + ioff];
+      _a[q] = inp[i * stride + off];
     }
     _a.fillRange(n_, _a.length, Float64x2.zero());
 
@@ -524,23 +521,26 @@ class PrimePaddedFFT extends _StridedFFT {
     _fft.inPlaceInverseFft(_a);
 
     // Unpermute and store in out.
-    final x0 = inp[ioff];
-    out[ooff] = x0;
+    final x0 = inp[off];
+    out[off] = x0;
     for (int q = 0; q < n_; ++q) {
       final i = multiplicativeInverseOfPrime(expMod(_g, q, _size), _size);
 
       // First output is just the sum of all the inputs.
-      out[ooff] += inp[i * istride + ioff];
+      final oi = i * stride + off;
+      out[off] += inp[oi];
 
       // Rest of the outputs are made by wrapping and summing the unpermuted
       // convolution with the first element of the input.
-      final oi = i * ostride + ooff;
       out[oi] = x0;
       for (int j = q; j < _pn; j += n_) {
         out[oi] += _a[j];
       }
     }
   }
+
+  @override
+  String toString() => 'PrimePaddedFFT($_size)';
 }
 
 // TODO: Get rid of this function.
