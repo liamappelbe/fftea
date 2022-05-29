@@ -94,7 +94,7 @@ abstract class FFT {
   FFT._(this._size);
 
   // TODO: Tune this threshold. When is PrimePaddedFFT faster than NaiveFFT?
-  static const _kNaiveThreshold = 4;
+  static const _kNaiveThreshold = 16;
   static FFT _makeFFT(int size, bool isPow2, bool isPrime) {
     if (size <= 0) {
       throw ArgumentError('FFT size must be greater than 0.', 'size');
@@ -358,23 +358,18 @@ class NaiveFFT extends _StridedFFT {
   @override
   String toString() => 'NaiveFFT($_size)';
 }
-int _qtotal = 0;
 
 class _CompositeFFTJob {
   final Float64x2List buf;
   final Float64x2List out;
-  final int n;
-  final int s;
   final int nn;
   final int i;
   final int bi;
   final Float64x2List w;
   final _StridedFFT fft;
-  _CompositeFFTJob(this.buf, this.out, this.n, this.s, this.nn, this.i, this.bi, this.w)
+  _CompositeFFTJob(this.buf, this.out, int s, this.nn, this.i, this.bi, this.w)
       : fft = FFT._makeFFTCached(s, false, true) as _StridedFFT;
-  void run() {
-    fft._stridedFft(buf, out, nn, bi, w, i);
-  }
+  void run() => fft._stridedFft(buf, out, nn, bi, w, i);
 }
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.
@@ -415,16 +410,12 @@ class CompositeFFT extends FFT {
     final ffts = _ffts[di];
     for (int i = 0; i < nn; ++i) {
       final bi = boff + i;
-      ffts.add(_CompositeFFTJob(buf, out, n, s, nn, i * stride, bi, _twiddles));
+      ffts.add(_CompositeFFTJob(buf, out, s, nn, i * stride, bi, _twiddles));
     }
   }
 
   @override
   void _inPlaceFftImpl(Float64x2List complexArray) {
-    //Float64x2List w = Float64x2List(_size);
-    //for (int i = 0; i < _size; ++i) w[i] = twiddle(_size, i);
-    //_inPlaceFftRecursive(complexArray, _buf, _out, w, _size, 1, 0, 0, 0);
-
     for (int i = 0; i < _size; ++i) {
       _innerBuf[_perm[i]] = complexArray[i];
     }
@@ -433,31 +424,11 @@ class CompositeFFT extends FFT {
         job.run();
       }
     }
-
     complexArray.setAll(0, _out);
   }
 
   @override
   String toString() => 'CompositeFFT($_size)';
-
-  /*void _inPlaceFftRecursive(Float64x2List input, Float64x2List buf, Float64x2List out, Float64x2List w, int n, int stride, int off, int boff, int di) {
-    // https://doi.org/10.1090/S0025-5718-1965-0178586-1
-    if (di >= _ffts.length) {
-      out[boff] = input[off];
-      return;
-    }
-    final fft = _ffts[di];
-    final s = fft.size;
-    final ss = s * stride;
-    final nn = n ~/ s;
-    for (int i = 0; i < s; ++i) {
-      _inPlaceFftRecursive(input, out, buf, w, nn, ss, i * stride + off, boff + i * nn, di + 1);
-    }
-    for (int i = 0; i < nn; ++i) {
-      final bi = boff + i;
-      fft._stridedFft2(buf, nn, bi, out, nn, bi, twiddle(n, i));
-    }
-  }*/
 }
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.
@@ -503,8 +474,8 @@ class PrimePaddedFFT extends _StridedFFT {
     // Primitive root permutation.
     final n_ = _size - 1;
     if (w != null) {
-      for (int ii = off + stride, ji = 1; ji < _size; ii += stride, ++ji) {
-        inp[ii] = compMul(inp[ii], w[(ji * wstride) % w.length]);
+      for (int ii = off + stride, wi = wstride, ji = 1; ji < _size; ii += stride, wi += wstride, ++ji) {
+        inp[ii] = compMul(inp[ii], w[wi % w.length]);
       }
     }
     for (int q = 0; q < n_; ++q) {
@@ -551,54 +522,6 @@ Float64x2 compMul(Float64x2 a, Float64x2 b) {
 // TODO: Get rid of this function.
 Float64x2 rotor(double t) => Float64x2(math.cos(t), math.sin(t));
 Float64x2 twiddle(int n, int k) => rotor(-2 * math.pi * k / n);
-
-Float64x2List compositeFft(Float64x2List input) {
-  final n = input.length;
-  Float64x2List out = Float64x2List(n);
-  Float64x2List buf = Float64x2List(n);
-  Float64x2List w = Float64x2List(n);
-  for (int i = 0; i < n; ++i) w[i] = twiddle(n, i);
-  compositeFftImpl(input, buf, out, w, n, 1, 0, 0, primeDecomp(n), 0);
-  return out;
-}
-
-int _ptotal = 0;
-void compositeFftImpl(Float64x2List input, Float64x2List buf, Float64x2List out, Float64x2List w, int n, int stride, int off, int boff, List<int> decomp, int di) {
-  // https://doi.org/10.1090/S0025-5718-1965-0178586-1
-  // TODO: Rewrite as a loop rather than a recursion.
-  // TODO: Can we make this inline?
-  // TODO: Handle large prime factors.
-  // TODO: Reduce index multiplications.
-  if (di >= decomp.length) {
-    out[boff] = input[off];
-    return;
-  }
-  final s = decomp[di];
-  final ss = s * stride;
-  final nn = n ~/ s;
-  for (int i = 0; i < s; ++i) {
-    compositeFftImpl(input, out, buf, w, nn, ss, i * stride + off, boff + i * nn, decomp, di + 1);
-  }
-  if (_ptotal < 20) print('$n,\t$stride,\t$off,\t$boff,\t$di,\t$s,\t$ss,\t$nn');
-  for (int i = 0; i < nn; ++i) {
-    final bi = boff + i;
-    if (_ptotal < 20) print('$i,\t$bi');
-    for (int j = 0; j < s; ++j) {
-      out[bi + j * nn] = buf[bi];
-    }
-    for (int j = 1; j < s; ++j) {
-      final p = buf[bi + j * nn];
-      for (int k = 0; k < s; ++k) {
-        final wi = stride * ((j * (k * nn + i)) % n);
-        if (_ptotal < 20) {
-          ++_ptotal;
-          print('$stride,\t$j,\t$k,\t$nn,\t$i,\t$n,\t$wi');
-        }
-        out[bi + k * nn] += compMul(p, w[wi]);
-      }
-    }
-  }
-}
 
 /// Extension methods for [Float64List], representing a windowing function.
 extension Window on Float64List {
