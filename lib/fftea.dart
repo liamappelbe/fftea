@@ -354,18 +354,16 @@ class NaiveFFT extends _StridedFFT {
     }
   }
 
-  void _stridedFft2(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff, Float64x2 wex) {
+  void _stridedFft2(Float64x2List inp, int istride, int ioff, Float64x2List out, int ostride, int ooff, int wn, int wi, int wns) {
     final x0 = inp[ioff];
     for (int io = ooff, st = 0; io < out.length; io += ostride, ++st) {
       out[io] = x0;
     }
     ioff += istride;
-    Float64x2 wexx = Float64x2(1, 0);
     for (int ii = ioff, ji = 1; ji < _size; ii += istride, ++ji) {
-      wexx = compMul(wexx, wex);
-      final p = inp[ii];
+      final p = compMul(inp[ii], twiddle(wn, ji * wi));
       for (int io = ooff, jj = 0, k = 0; k < _size; io += ostride, jj += ji, ++k) {
-        out[io] += compMul(p, compMul(_twiddles[jj % _size], wexx));
+        out[io] += compMul(p, _twiddles[jj % _size]);
       }
     }
   }
@@ -383,9 +381,10 @@ class _CompositeFFTJob {
   final NaiveFFT fft;
   _CompositeFFTJob(this.buf, this.out, this.n, this.s, this.nn, this.i, this.bi)
       //: fft = FFT._makeFFTCached(s, false, true) as NaiveFFT;
-      : fft = NaiveFFT(s, 2 * math.pi * i * 0);
+      : fft = NaiveFFT(s, 2 * math.pi * i * 0) {
+  }
   void run() {
-    fft._stridedFft2(buf, nn, bi, out, nn, bi, twiddle(n, i));
+    fft._stridedFft2(buf, nn, bi, out, nn, bi, n, i, n ~/ fft._size);
     //fft._stridedFft(buf, nn, bi, out, nn, bi);
   }
 }
