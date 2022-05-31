@@ -83,6 +83,7 @@ extension ComplexArray on Float64x2List {
   /// This method returns a new array (which is a view into the same data). It
   /// does not modify this array, or make a copy of the data.
   Float64x2List discardConjugates() {
+    // TODO: What about odd numbered lengths?
     return Float64x2List.sublistView(this, 0, (length >>> 1) + 1);
   }
 }
@@ -174,13 +175,12 @@ abstract class FFT {
     final scale = Float64x2.splat(len.toDouble());
     complexArray[0] /= scale;
     if (len <= 1) return;
-    for (int i = 1; i < half; ++i) {
+    for (int i = 1; i <= half; ++i) {
       final j = len - i;
       final temp = complexArray[j];
       complexArray[j] = complexArray[i] / scale;
       complexArray[i] = temp / scale;
     }
-    complexArray[half] /= scale;
   }
 
   /// Real-valued inverse FFT.
@@ -433,7 +433,7 @@ class CompositeFFT extends FFT {
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.
 ///
-/// The size must be a prime number, eg 2, 3, 5, 7, 11 etc.
+/// The size must be a prime number greater than 2, eg 3, 5, 7, 11 etc.
 class PrimePaddedFFT extends _StridedFFT {
   // TODO: Is Bluestein's algorithm faster?
   final int _g;
@@ -459,7 +459,7 @@ class PrimePaddedFFT extends _StridedFFT {
 
   /// Constructs an FFT object with the given size.
   ///
-  /// The size must be a prime number, eg 2, 3, 5, 7, 11 etc.
+  /// The size must be a prime number greater than 2, eg 3, 5, 7, 11 etc.
   PrimePaddedFFT(int size) : this._(size, nextPowerOf2((size - 1) << 1));
 
   @override

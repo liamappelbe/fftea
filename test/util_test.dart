@@ -31,7 +31,35 @@ void main() {
   });
 
   test('Prime decomposition', () {
+    expect(primeDecomp(1), []);
+    expect(primeDecomp(2), [2]);
+    expect(primeDecomp(3), [3]);
+    expect(primeDecomp(4), [2, 2]);
+    expect(primeDecomp(5), [5]);
+    expect(primeDecomp(6), [2, 3]);
+    expect(primeDecomp(7), [7]);
+    expect(primeDecomp(8), [2, 2, 2]);
     expect(primeDecomp(453974598), [2, 3, 3, 3, 7, 11, 23, 47, 101]);
+  });
+
+  test('isPrime', () {
+    final p = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
+        71, 73, 79, 83, 89, 97, 101};
+    for (int i = 0; i <= 102; ++i) {
+      expect(isPrime(i), p.contains(i));
+    }
+  });
+
+  test('More prime decomposition', () {
+    for (int i = 1; i < 10000; ++i) {
+      final decomp = primeDecomp(i);
+      int j = 1;
+      for (final x in decomp) {
+        expect(isPrime(x), isTrue);
+        j *= x;
+      }
+      expect(j, i);
+    }
   });
 
   test("Euler's totient", () {

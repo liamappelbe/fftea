@@ -46,6 +46,7 @@ final primes = Primes();
 
 bool isPrime(int n) {
   // TODO: Maybe implement Baillie–PSW?
+  if (n <= 1) return false;
   for (int i = 0, p = 2;;) {
     if (p * p > n) return true;
     if (n % p == 0) return false;
@@ -55,21 +56,18 @@ bool isPrime(int n) {
 }
 
 List<int> primeDecomp(int n) {
-  // TODO: Fix edge case where n is a large prime, and this function will store
-  // all the prime numbers up to that prime in primes. Instead, explicitly check
-  // if n is prime each time we divide it (or only do this once i>100 or
-  // something). This will mean we only store primes up to sqrt(n).
   final a = <int>[];
   for (int i = 0, p = 2;;) {
+    if (p * p > n) break;
     if (n % p != 0) {
       i += 1;
       p = primes.getPrime(i);
     } else {
       a.add(p);
       n ~/= p;
-      if (n == 1) break;
     }
   }
+  if (n != 1) a.add(n);
   return a;
 }
 

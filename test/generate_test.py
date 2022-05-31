@@ -207,7 +207,13 @@ def run(gen, filename, *args):
   with open(outFile, 'w') as f:
     gen(writer(f), *args)
 
-run(generate, 'fftea_generated_radix2_test.dart', 'Radix2FFT',
+run(generate, 'radix2_fft_generated_test.dart', 'Radix2FFT',
     [2 ** i for i in range(11)])
+run(generate, 'naive_fft_generated_test.dart', 'NaiveFFT',
+    [i + 1 for i in range(16)])
+run(generate, 'prime_padded_fft_generated_test.dart', 'PrimePaddedFFT',
+    [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 1009, 7919, 28657])
+run(generate, 'composite_fft_generated_test.dart', 'CompositeFFT',
+    [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
 run(generateMisc, 'fftea_generated_misc_test.dart')
 print('Done :)')
