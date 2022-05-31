@@ -18,10 +18,10 @@
 import numpy
 import math
 import random
+import struct
 import os
 
 kNumsPerLine = 4
-kOutFile = 'fftea_generated_test.dart';
 
 kPreamble = '''// Copyright 2022 The fftea authors
 //
@@ -78,67 +78,89 @@ def cplxBufStr(a):
     b.append(numpy.imag(z))
   return realBufStr(b)
 
-def generate(f):
+def writer(f):
   def write(s):
     f.write('%s\n' % s)
+  return write
+
+def writeMatrix(filename, m):
+  print('  Writing %s' % filename)
+  with open(filename, 'wb') as f:
+    f.write(b'MAT ')
+    f.write(len(m).to_bytes(4, 'little'))
+    for mm in m:
+      f.write(len(mm).to_bytes(4, 'little'))
+      for x in mm:
+        f.write(bytearray(struct.pack('d', x)))
+
+_data = set()
+def createDataset(filename, maker):
+  if filename not in _data:
+    _data.add(filename)
+    writeMatrix(filename, maker())
+
+def cplxToArray(c):
+  return [
+    [numpy.real(z) for z in c],
+    [numpy.imag(z) for z in c],
+  ]
+
+def generate(write, impl, sizes):
   write(kPreamble)
 
   def makeFftCase(n):
-    a = [randCplx(10) for i in range(n)]
-    f = numpy.fft.fft(a)
-    write('    testFft(')
-    write('      [%s],' % cplxBufStr(a))
-    write('      [%s],' % cplxBufStr(f))
-    write('    );')
+    matfile = 'test/data/fft_%d.mat' % n
+    def maker():
+      a = [randCplx(10) for i in range(n)]
+      f = cplxToArray(numpy.fft.fft(a))
+      b = cplxToArray(a)
+      return [b[0], b[1], f[0], f[1]]
+    createDataset(matfile, maker)
+    write("  test('FFT %s %d', () async {" % (impl, n))
+    write("    await testFft('%s', %s(%d));" % (matfile, impl, n))
+    write('  });\n')
 
-  write("  test('FFT', () {")
-  makeFftCase(1)
-  makeFftCase(2)
-  makeFftCase(4)
-  makeFftCase(8)
-  makeFftCase(16)
-  makeFftCase(32)
-  makeFftCase(64)
-  makeFftCase(128)
-  write('  });\n')
+  for n in sizes:
+    makeFftCase(n)
 
   def makeRealFftCase(n):
-    a = [randReal(10) for i in range(n)]
-    f = numpy.fft.fft(a)
-    write('    testRealFft(')
-    write('      [%s],' % realBufStr(a))
-    write('      [%s],' % cplxBufStr(f))
-    write('    );')
+    matfile = 'test/data/real_fft_%d.mat' % n
+    def maker():
+      a = [randReal(10) for i in range(n)]
+      f = cplxToArray(numpy.fft.fft(a))
+      return [a, f[0], f[1]]
+    createDataset(matfile, maker)
+    write("  test('Real FFT %s %d', () async {" % (impl, n))
+    write("    await testRealFft('%s', %s(%d));" % (matfile, impl, n))
+    write('  });\n')
 
-  write("  test('Real FFT', () {")
-  makeRealFftCase(1)
-  makeRealFftCase(2)
-  makeRealFftCase(4)
-  makeRealFftCase(8)
-  makeRealFftCase(16)
-  makeRealFftCase(32)
-  makeRealFftCase(64)
-  makeRealFftCase(128)
-  write('  });\n')
+  for n in sizes:
+    makeRealFftCase(n)
+
+  write('}\n')
+
+def generateMisc(write):
+  write(kPreamble)
 
   def makeWindowCase(n, name, fn):
+    write("  test('Window %s %d', () {" % (name, n))
     write('    expectClose(')
     write('      Window.%s(%s),' % (name, n))
     write('      [%s],' % realBufStr(fn(n)))
     write('    );')
+    write('  });\n')
 
-  write("  test('Window', () {")
   makeWindowCase(16, 'hamming', numpy.hamming)
   makeWindowCase(16, 'hanning', numpy.hanning)
   makeWindowCase(16, 'bartlett', numpy.bartlett)
   makeWindowCase(16, 'blackman', numpy.blackman)
-  write('  });\n')
 
   def makeWindowApplyCase(n):
     a = [randReal(10) for i in range(n)]
     b = numpy.hamming(n) * a
     c = [randCplx(10) for i in range(n)]
     d = numpy.hamming(n) * c
+    write("  test('Window apply %d', () {" % n)
     write('    final w = Window.hamming(16);')
     write('    final a = [%s];' % realBufStr(a))
     write('    expectClose(')
@@ -150,10 +172,9 @@ def generate(f):
     write('      toFloats(w.applyWindow(makeArray(b))),')
     write('      [%s],' % cplxBufStr(d))
     write('    );');
+    write('  });\n')
 
-  write("  test('Window apply', () {")
   makeWindowApplyCase(16)
-  write('  });\n')
 
   def makeStftCase(n, pn, nc, cs):
     a = [randReal(10) if i < n else 0 for i in range(pn)]
@@ -163,6 +184,7 @@ def generate(f):
     while (i + nc) <= len(a):
       b.append(numpy.fft.fft(a[i:(i+nc)] * w))
       i += cs
+    write("  test('STFT %d %d %d %d', () {" % (n, pn, nc, cs))
     write('    testStft(')
     write('      %s,' % nc)
     write('      %s,' % cs)
@@ -172,16 +194,20 @@ def generate(f):
       write('      [%s],' % cplxBufStr(c))
     write('      ],')
     write('    );')
+    write('  });')
 
-  write("  test('STFT', () {")
   makeStftCase(128, 128, 16, 8)
   makeStftCase(47, 51, 16, 5)
-  write('  });')
 
   write('}\n')
 
-outFile = os.path.normpath(os.path.join(os.path.dirname(__file__), kOutFile))
-print('Writing %s' % outFile)
-with open(outFile, 'w') as f:
-  generate(f)
+def run(gen, filename, *args):
+  outFile = os.path.normpath(os.path.join(os.path.dirname(__file__), filename))
+  print('Writing %s' % outFile)
+  with open(outFile, 'w') as f:
+    gen(writer(f), *args)
+
+run(generate, 'fftea_generated_radix2_test.dart', 'Radix2FFT',
+    [2 ** i for i in range(11)])
+run(generateMisc, 'fftea_generated_misc_test.dart')
 print('Done :)')
