@@ -23,107 +23,107 @@ import 'package:test/test.dart';
 import 'util.dart';
 
 void main() {
-  test('FFT PrimePaddedFFT 3', () async {
+  test('PrimePaddedFFT 3', () async {
     await testFft('test/data/fft_3.mat', PrimePaddedFFT(3));
   });
 
-  test('FFT PrimePaddedFFT 5', () async {
+  test('PrimePaddedFFT 5', () async {
     await testFft('test/data/fft_5.mat', PrimePaddedFFT(5));
   });
 
-  test('FFT PrimePaddedFFT 7', () async {
+  test('PrimePaddedFFT 7', () async {
     await testFft('test/data/fft_7.mat', PrimePaddedFFT(7));
   });
 
-  test('FFT PrimePaddedFFT 11', () async {
+  test('PrimePaddedFFT 11', () async {
     await testFft('test/data/fft_11.mat', PrimePaddedFFT(11));
   });
 
-  test('FFT PrimePaddedFFT 13', () async {
+  test('PrimePaddedFFT 13', () async {
     await testFft('test/data/fft_13.mat', PrimePaddedFFT(13));
   });
 
-  test('FFT PrimePaddedFFT 17', () async {
+  test('PrimePaddedFFT 17', () async {
     await testFft('test/data/fft_17.mat', PrimePaddedFFT(17));
   });
 
-  test('FFT PrimePaddedFFT 19', () async {
+  test('PrimePaddedFFT 19', () async {
     await testFft('test/data/fft_19.mat', PrimePaddedFFT(19));
   });
 
-  test('FFT PrimePaddedFFT 23', () async {
+  test('PrimePaddedFFT 23', () async {
     await testFft('test/data/fft_23.mat', PrimePaddedFFT(23));
   });
 
-  test('FFT PrimePaddedFFT 29', () async {
+  test('PrimePaddedFFT 29', () async {
     await testFft('test/data/fft_29.mat', PrimePaddedFFT(29));
   });
 
-  test('FFT PrimePaddedFFT 31', () async {
+  test('PrimePaddedFFT 31', () async {
     await testFft('test/data/fft_31.mat', PrimePaddedFFT(31));
   });
 
-  test('FFT PrimePaddedFFT 1009', () async {
+  test('PrimePaddedFFT 1009', () async {
     await testFft('test/data/fft_1009.mat', PrimePaddedFFT(1009));
   });
 
-  test('FFT PrimePaddedFFT 7919', () async {
+  test('PrimePaddedFFT 7919', () async {
     await testFft('test/data/fft_7919.mat', PrimePaddedFFT(7919));
   });
 
-  test('FFT PrimePaddedFFT 28657', () async {
+  test('PrimePaddedFFT 28657', () async {
     await testFft('test/data/fft_28657.mat', PrimePaddedFFT(28657));
   });
 
-  test('Real FFT PrimePaddedFFT 3', () async {
+  test('Real PrimePaddedFFT 3', () async {
     await testRealFft('test/data/real_fft_3.mat', PrimePaddedFFT(3));
   });
 
-  test('Real FFT PrimePaddedFFT 5', () async {
+  test('Real PrimePaddedFFT 5', () async {
     await testRealFft('test/data/real_fft_5.mat', PrimePaddedFFT(5));
   });
 
-  test('Real FFT PrimePaddedFFT 7', () async {
+  test('Real PrimePaddedFFT 7', () async {
     await testRealFft('test/data/real_fft_7.mat', PrimePaddedFFT(7));
   });
 
-  test('Real FFT PrimePaddedFFT 11', () async {
+  test('Real PrimePaddedFFT 11', () async {
     await testRealFft('test/data/real_fft_11.mat', PrimePaddedFFT(11));
   });
 
-  test('Real FFT PrimePaddedFFT 13', () async {
+  test('Real PrimePaddedFFT 13', () async {
     await testRealFft('test/data/real_fft_13.mat', PrimePaddedFFT(13));
   });
 
-  test('Real FFT PrimePaddedFFT 17', () async {
+  test('Real PrimePaddedFFT 17', () async {
     await testRealFft('test/data/real_fft_17.mat', PrimePaddedFFT(17));
   });
 
-  test('Real FFT PrimePaddedFFT 19', () async {
+  test('Real PrimePaddedFFT 19', () async {
     await testRealFft('test/data/real_fft_19.mat', PrimePaddedFFT(19));
   });
 
-  test('Real FFT PrimePaddedFFT 23', () async {
+  test('Real PrimePaddedFFT 23', () async {
     await testRealFft('test/data/real_fft_23.mat', PrimePaddedFFT(23));
   });
 
-  test('Real FFT PrimePaddedFFT 29', () async {
+  test('Real PrimePaddedFFT 29', () async {
     await testRealFft('test/data/real_fft_29.mat', PrimePaddedFFT(29));
   });
 
-  test('Real FFT PrimePaddedFFT 31', () async {
+  test('Real PrimePaddedFFT 31', () async {
     await testRealFft('test/data/real_fft_31.mat', PrimePaddedFFT(31));
   });
 
-  test('Real FFT PrimePaddedFFT 1009', () async {
+  test('Real PrimePaddedFFT 1009', () async {
     await testRealFft('test/data/real_fft_1009.mat', PrimePaddedFFT(1009));
   });
 
-  test('Real FFT PrimePaddedFFT 7919', () async {
+  test('Real PrimePaddedFFT 7919', () async {
     await testRealFft('test/data/real_fft_7919.mat', PrimePaddedFFT(7919));
   });
 
-  test('Real FFT PrimePaddedFFT 28657', () async {
+  test('Real PrimePaddedFFT 28657', () async {
     await testRealFft('test/data/real_fft_28657.mat', PrimePaddedFFT(28657));
   });
 

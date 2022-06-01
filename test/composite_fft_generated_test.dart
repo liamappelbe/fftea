@@ -23,163 +23,163 @@ import 'package:test/test.dart';
 import 'util.dart';
 
 void main() {
-  test('FFT CompositeFFT 1', () async {
+  test('CompositeFFT 1', () async {
     await testFft('test/data/fft_1.mat', CompositeFFT(1));
   });
 
-  test('FFT CompositeFFT 2', () async {
+  test('CompositeFFT 2', () async {
     await testFft('test/data/fft_2.mat', CompositeFFT(2));
   });
 
-  test('FFT CompositeFFT 3', () async {
+  test('CompositeFFT 3', () async {
     await testFft('test/data/fft_3.mat', CompositeFFT(3));
   });
 
-  test('FFT CompositeFFT 4', () async {
+  test('CompositeFFT 4', () async {
     await testFft('test/data/fft_4.mat', CompositeFFT(4));
   });
 
-  test('FFT CompositeFFT 5', () async {
+  test('CompositeFFT 5', () async {
     await testFft('test/data/fft_5.mat', CompositeFFT(5));
   });
 
-  test('FFT CompositeFFT 6', () async {
+  test('CompositeFFT 6', () async {
     await testFft('test/data/fft_6.mat', CompositeFFT(6));
   });
 
-  test('FFT CompositeFFT 7', () async {
+  test('CompositeFFT 7', () async {
     await testFft('test/data/fft_7.mat', CompositeFFT(7));
   });
 
-  test('FFT CompositeFFT 8', () async {
+  test('CompositeFFT 8', () async {
     await testFft('test/data/fft_8.mat', CompositeFFT(8));
   });
 
-  test('FFT CompositeFFT 9', () async {
+  test('CompositeFFT 9', () async {
     await testFft('test/data/fft_9.mat', CompositeFFT(9));
   });
 
-  test('FFT CompositeFFT 10', () async {
+  test('CompositeFFT 10', () async {
     await testFft('test/data/fft_10.mat', CompositeFFT(10));
   });
 
-  test('FFT CompositeFFT 11', () async {
+  test('CompositeFFT 11', () async {
     await testFft('test/data/fft_11.mat', CompositeFFT(11));
   });
 
-  test('FFT CompositeFFT 12', () async {
+  test('CompositeFFT 12', () async {
     await testFft('test/data/fft_12.mat', CompositeFFT(12));
   });
 
-  test('FFT CompositeFFT 461', () async {
+  test('CompositeFFT 461', () async {
     await testFft('test/data/fft_461.mat', CompositeFFT(461));
   });
 
-  test('FFT CompositeFFT 752', () async {
+  test('CompositeFFT 752', () async {
     await testFft('test/data/fft_752.mat', CompositeFFT(752));
   });
 
-  test('FFT CompositeFFT 1980', () async {
+  test('CompositeFFT 1980', () async {
     await testFft('test/data/fft_1980.mat', CompositeFFT(1980));
   });
 
-  test('FFT CompositeFFT 2310', () async {
+  test('CompositeFFT 2310', () async {
     await testFft('test/data/fft_2310.mat', CompositeFFT(2310));
   });
 
-  test('FFT CompositeFFT 2442', () async {
+  test('CompositeFFT 2442', () async {
     await testFft('test/data/fft_2442.mat', CompositeFFT(2442));
   });
 
-  test('FFT CompositeFFT 3410', () async {
+  test('CompositeFFT 3410', () async {
     await testFft('test/data/fft_3410.mat', CompositeFFT(3410));
   });
 
-  test('FFT CompositeFFT 4913', () async {
+  test('CompositeFFT 4913', () async {
     await testFft('test/data/fft_4913.mat', CompositeFFT(4913));
   });
 
-  test('FFT CompositeFFT 7429', () async {
+  test('CompositeFFT 7429', () async {
     await testFft('test/data/fft_7429.mat', CompositeFFT(7429));
   });
 
-  test('Real FFT CompositeFFT 1', () async {
+  test('Real CompositeFFT 1', () async {
     await testRealFft('test/data/real_fft_1.mat', CompositeFFT(1));
   });
 
-  test('Real FFT CompositeFFT 2', () async {
+  test('Real CompositeFFT 2', () async {
     await testRealFft('test/data/real_fft_2.mat', CompositeFFT(2));
   });
 
-  test('Real FFT CompositeFFT 3', () async {
+  test('Real CompositeFFT 3', () async {
     await testRealFft('test/data/real_fft_3.mat', CompositeFFT(3));
   });
 
-  test('Real FFT CompositeFFT 4', () async {
+  test('Real CompositeFFT 4', () async {
     await testRealFft('test/data/real_fft_4.mat', CompositeFFT(4));
   });
 
-  test('Real FFT CompositeFFT 5', () async {
+  test('Real CompositeFFT 5', () async {
     await testRealFft('test/data/real_fft_5.mat', CompositeFFT(5));
   });
 
-  test('Real FFT CompositeFFT 6', () async {
+  test('Real CompositeFFT 6', () async {
     await testRealFft('test/data/real_fft_6.mat', CompositeFFT(6));
   });
 
-  test('Real FFT CompositeFFT 7', () async {
+  test('Real CompositeFFT 7', () async {
     await testRealFft('test/data/real_fft_7.mat', CompositeFFT(7));
   });
 
-  test('Real FFT CompositeFFT 8', () async {
+  test('Real CompositeFFT 8', () async {
     await testRealFft('test/data/real_fft_8.mat', CompositeFFT(8));
   });
 
-  test('Real FFT CompositeFFT 9', () async {
+  test('Real CompositeFFT 9', () async {
     await testRealFft('test/data/real_fft_9.mat', CompositeFFT(9));
   });
 
-  test('Real FFT CompositeFFT 10', () async {
+  test('Real CompositeFFT 10', () async {
     await testRealFft('test/data/real_fft_10.mat', CompositeFFT(10));
   });
 
-  test('Real FFT CompositeFFT 11', () async {
+  test('Real CompositeFFT 11', () async {
     await testRealFft('test/data/real_fft_11.mat', CompositeFFT(11));
   });
 
-  test('Real FFT CompositeFFT 12', () async {
+  test('Real CompositeFFT 12', () async {
     await testRealFft('test/data/real_fft_12.mat', CompositeFFT(12));
   });
 
-  test('Real FFT CompositeFFT 461', () async {
+  test('Real CompositeFFT 461', () async {
     await testRealFft('test/data/real_fft_461.mat', CompositeFFT(461));
   });
 
-  test('Real FFT CompositeFFT 752', () async {
+  test('Real CompositeFFT 752', () async {
     await testRealFft('test/data/real_fft_752.mat', CompositeFFT(752));
   });
 
-  test('Real FFT CompositeFFT 1980', () async {
+  test('Real CompositeFFT 1980', () async {
     await testRealFft('test/data/real_fft_1980.mat', CompositeFFT(1980));
   });
 
-  test('Real FFT CompositeFFT 2310', () async {
+  test('Real CompositeFFT 2310', () async {
     await testRealFft('test/data/real_fft_2310.mat', CompositeFFT(2310));
   });
 
-  test('Real FFT CompositeFFT 2442', () async {
+  test('Real CompositeFFT 2442', () async {
     await testRealFft('test/data/real_fft_2442.mat', CompositeFFT(2442));
   });
 
-  test('Real FFT CompositeFFT 3410', () async {
+  test('Real CompositeFFT 3410', () async {
     await testRealFft('test/data/real_fft_3410.mat', CompositeFFT(3410));
   });
 
-  test('Real FFT CompositeFFT 4913', () async {
+  test('Real CompositeFFT 4913', () async {
     await testRealFft('test/data/real_fft_4913.mat', CompositeFFT(4913));
   });
 
-  test('Real FFT CompositeFFT 7429', () async {
+  test('Real CompositeFFT 7429', () async {
     await testRealFft('test/data/real_fft_7429.mat', CompositeFFT(7429));
   });
 

@@ -90,13 +90,13 @@ extension ComplexArray on Float64x2List {
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.
 abstract class FFT {
-  static final _ffts = <int, FFT>{};
+  static final _ffts = [<int, FFT>{}, <int, FFT>{}, <int, FFT>{}, <int, FFT>{}];
   final int _size;
   FFT._(this._size);
 
   // TODO: Tune this threshold. When is PrimePaddedFFT faster than NaiveFFT?
   static const _kNaiveThreshold = 16;
-  static FFT _makeFFT(int size, bool isPow2, bool isPrime) {
+  static FFT _makeFFT(int size, bool isPow2, bool isOddPrime) {
     if (size <= 0) {
       throw ArgumentError('FFT size must be greater than 0.', 'size');
     }
@@ -108,15 +108,18 @@ abstract class FFT {
     if (size < _kNaiveThreshold) {
       return NaiveFFT(size);
     }
-    if (isPrime) {
+    if (isOddPrime) {
       // TODO: Don't zero pad if (size - 1) is highly composite.
       return PrimePaddedFFT(size);
     }
     return CompositeFFT(size);
   }
 
-  static FFT _makeFFTCached(int size, bool isPow2, bool isPrime) =>
-      _ffts[size] ??= _makeFFT(size, isPow2, isPrime);
+  static _key(bool isPow2, bool isOddPrime) =>
+      (isPow2 ? 2 : 0) + (isOddPrime ? 1 : 0);
+  static FFT _makeFFTCached(int size, bool isPow2, bool isOddPrime) =>
+      _ffts[_key(isPow2, isOddPrime)][size] ??=
+          _makeFFT(size, isPow2, isOddPrime);
 
   /// Constructs an FFT object with the given size.
   factory FFT(int size) {

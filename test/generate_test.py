@@ -116,7 +116,7 @@ def generate(write, impl, sizes):
       b = cplxToArray(a)
       return [b[0], b[1], f[0], f[1]]
     createDataset(matfile, maker)
-    write("  test('FFT %s %d', () async {" % (impl, n))
+    write("  test('%s %d', () async {" % (impl, n))
     write("    await testFft('%s', %s(%d));" % (matfile, impl, n))
     write('  });\n')
 
@@ -130,7 +130,7 @@ def generate(write, impl, sizes):
       f = cplxToArray(numpy.fft.fft(a))
       return [a, f[0], f[1]]
     createDataset(matfile, maker)
-    write("  test('Real FFT %s %d', () async {" % (impl, n))
+    write("  test('Real %s %d', () async {" % (impl, n))
     write("    await testRealFft('%s', %s(%d));" % (matfile, impl, n))
     write('  });\n')
 
@@ -214,6 +214,8 @@ run(generate, 'naive_fft_generated_test.dart', 'NaiveFFT',
 run(generate, 'prime_padded_fft_generated_test.dart', 'PrimePaddedFFT',
     [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 1009, 7919, 28657])
 run(generate, 'composite_fft_generated_test.dart', 'CompositeFFT',
+    [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
+run(generate, 'fft_generated_test.dart', 'FFT',
     [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
 run(generateMisc, 'fftea_generated_misc_test.dart')
 print('Done :)')

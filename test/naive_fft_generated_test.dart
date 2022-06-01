@@ -23,131 +23,131 @@ import 'package:test/test.dart';
 import 'util.dart';
 
 void main() {
-  test('FFT NaiveFFT 1', () async {
+  test('NaiveFFT 1', () async {
     await testFft('test/data/fft_1.mat', NaiveFFT(1));
   });
 
-  test('FFT NaiveFFT 2', () async {
+  test('NaiveFFT 2', () async {
     await testFft('test/data/fft_2.mat', NaiveFFT(2));
   });
 
-  test('FFT NaiveFFT 3', () async {
+  test('NaiveFFT 3', () async {
     await testFft('test/data/fft_3.mat', NaiveFFT(3));
   });
 
-  test('FFT NaiveFFT 4', () async {
+  test('NaiveFFT 4', () async {
     await testFft('test/data/fft_4.mat', NaiveFFT(4));
   });
 
-  test('FFT NaiveFFT 5', () async {
+  test('NaiveFFT 5', () async {
     await testFft('test/data/fft_5.mat', NaiveFFT(5));
   });
 
-  test('FFT NaiveFFT 6', () async {
+  test('NaiveFFT 6', () async {
     await testFft('test/data/fft_6.mat', NaiveFFT(6));
   });
 
-  test('FFT NaiveFFT 7', () async {
+  test('NaiveFFT 7', () async {
     await testFft('test/data/fft_7.mat', NaiveFFT(7));
   });
 
-  test('FFT NaiveFFT 8', () async {
+  test('NaiveFFT 8', () async {
     await testFft('test/data/fft_8.mat', NaiveFFT(8));
   });
 
-  test('FFT NaiveFFT 9', () async {
+  test('NaiveFFT 9', () async {
     await testFft('test/data/fft_9.mat', NaiveFFT(9));
   });
 
-  test('FFT NaiveFFT 10', () async {
+  test('NaiveFFT 10', () async {
     await testFft('test/data/fft_10.mat', NaiveFFT(10));
   });
 
-  test('FFT NaiveFFT 11', () async {
+  test('NaiveFFT 11', () async {
     await testFft('test/data/fft_11.mat', NaiveFFT(11));
   });
 
-  test('FFT NaiveFFT 12', () async {
+  test('NaiveFFT 12', () async {
     await testFft('test/data/fft_12.mat', NaiveFFT(12));
   });
 
-  test('FFT NaiveFFT 13', () async {
+  test('NaiveFFT 13', () async {
     await testFft('test/data/fft_13.mat', NaiveFFT(13));
   });
 
-  test('FFT NaiveFFT 14', () async {
+  test('NaiveFFT 14', () async {
     await testFft('test/data/fft_14.mat', NaiveFFT(14));
   });
 
-  test('FFT NaiveFFT 15', () async {
+  test('NaiveFFT 15', () async {
     await testFft('test/data/fft_15.mat', NaiveFFT(15));
   });
 
-  test('FFT NaiveFFT 16', () async {
+  test('NaiveFFT 16', () async {
     await testFft('test/data/fft_16.mat', NaiveFFT(16));
   });
 
-  test('Real FFT NaiveFFT 1', () async {
+  test('Real NaiveFFT 1', () async {
     await testRealFft('test/data/real_fft_1.mat', NaiveFFT(1));
   });
 
-  test('Real FFT NaiveFFT 2', () async {
+  test('Real NaiveFFT 2', () async {
     await testRealFft('test/data/real_fft_2.mat', NaiveFFT(2));
   });
 
-  test('Real FFT NaiveFFT 3', () async {
+  test('Real NaiveFFT 3', () async {
     await testRealFft('test/data/real_fft_3.mat', NaiveFFT(3));
   });
 
-  test('Real FFT NaiveFFT 4', () async {
+  test('Real NaiveFFT 4', () async {
     await testRealFft('test/data/real_fft_4.mat', NaiveFFT(4));
   });
 
-  test('Real FFT NaiveFFT 5', () async {
+  test('Real NaiveFFT 5', () async {
     await testRealFft('test/data/real_fft_5.mat', NaiveFFT(5));
   });
 
-  test('Real FFT NaiveFFT 6', () async {
+  test('Real NaiveFFT 6', () async {
     await testRealFft('test/data/real_fft_6.mat', NaiveFFT(6));
   });
 
-  test('Real FFT NaiveFFT 7', () async {
+  test('Real NaiveFFT 7', () async {
     await testRealFft('test/data/real_fft_7.mat', NaiveFFT(7));
   });
 
-  test('Real FFT NaiveFFT 8', () async {
+  test('Real NaiveFFT 8', () async {
     await testRealFft('test/data/real_fft_8.mat', NaiveFFT(8));
   });
 
-  test('Real FFT NaiveFFT 9', () async {
+  test('Real NaiveFFT 9', () async {
     await testRealFft('test/data/real_fft_9.mat', NaiveFFT(9));
   });
 
-  test('Real FFT NaiveFFT 10', () async {
+  test('Real NaiveFFT 10', () async {
     await testRealFft('test/data/real_fft_10.mat', NaiveFFT(10));
   });
 
-  test('Real FFT NaiveFFT 11', () async {
+  test('Real NaiveFFT 11', () async {
     await testRealFft('test/data/real_fft_11.mat', NaiveFFT(11));
   });
 
-  test('Real FFT NaiveFFT 12', () async {
+  test('Real NaiveFFT 12', () async {
     await testRealFft('test/data/real_fft_12.mat', NaiveFFT(12));
   });
 
-  test('Real FFT NaiveFFT 13', () async {
+  test('Real NaiveFFT 13', () async {
     await testRealFft('test/data/real_fft_13.mat', NaiveFFT(13));
   });
 
-  test('Real FFT NaiveFFT 14', () async {
+  test('Real NaiveFFT 14', () async {
     await testRealFft('test/data/real_fft_14.mat', NaiveFFT(14));
   });
 
-  test('Real FFT NaiveFFT 15', () async {
+  test('Real NaiveFFT 15', () async {
     await testRealFft('test/data/real_fft_15.mat', NaiveFFT(15));
   });
 
-  test('Real FFT NaiveFFT 16', () async {
+  test('Real NaiveFFT 16', () async {
     await testRealFft('test/data/real_fft_16.mat', NaiveFFT(16));
   });
 
