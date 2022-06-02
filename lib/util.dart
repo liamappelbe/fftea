@@ -75,6 +75,7 @@ List<int> primeFactors(int n) {
   bool newp = true;
   final a = <int>[];
   for (int i = 0, p = 2;;) {
+    if (p * p > n) break;
     if (n % p != 0) {
       i += 1;
       p = primes.getPrime(i);
@@ -85,9 +86,9 @@ List<int> primeFactors(int n) {
         newp = false;
       }
       n ~/= p;
-      if (n == 1) break;
     }
   }
+  if (n != 1 && (a.length == 0 || a.last != n)) a.add(n);
   return a;
 }
 
@@ -144,29 +145,6 @@ int expMod(int g, int k, int n) {
   return y;
 }
 
-// TODO: Probably don't need this function.
-int eulersTotient(int n) {
-  bool newp = true;
-  int e = 1;
-  for (int i = 0, p = 2;;) {
-    if (n % p != 0) {
-      i += 1;
-      p = primes.getPrime(i);
-      newp = true;
-    } else {
-      if (newp) {
-        e *= p - 1;
-        newp = false;
-      } else {
-        e *= p;
-      }
-      n ~/= p;
-      if (n == 1) break;
-    }
-  }
-  return e;
-}
-
 // Returns the multiplicative inverse of x mod n, where n is a prime.
 int multiplicativeInverseOfPrime(int x, int n) {
   return expMod(x, n - 2, n);
@@ -175,10 +153,14 @@ int multiplicativeInverseOfPrime(int x, int n) {
 Float64x2List twiddleFactors(int size) {
   final twiddles = Float64x2List(size);
   final dt = -2 * math.pi / size;
-  // TODO: Use reflection to halve the number of terms calculated.
-  for (int i = 0; i < size; ++i) {
+  final half = size ~/ 2;
+  for (int i = 0; i <= half; ++i) {
     final t = i * dt;
     twiddles[i] = Float64x2(math.cos(t), math.sin(t));
+  }
+  for (int i = (size + 1) ~/ 2; i < size; ++i) {
+    final a = twiddles[size - i];
+    twiddles[i] = Float64x2(a.x, -a.y);
   }
   return twiddles;
 }

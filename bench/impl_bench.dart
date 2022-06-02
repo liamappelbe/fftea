@@ -107,7 +107,8 @@ List<int> generateBenchSizes() {
     i *= 1.00347174851;
     sizes.add(i.toInt());
   }
-  return sizes.toList()..sort();
+  //return sizes.toList()..sort();
+  return [65536];
 }
 
 void main() {

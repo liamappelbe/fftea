@@ -290,8 +290,9 @@ class Radix2FFT extends FFT {
       }
     }
     // FFT main loop.
-    for (int m = 1; m < n;) {
-      final nm = n2 ~/ m;  // TODO: Turn this into a shift.
+    for (int ms = 0; ms < _bits; ++ms) {
+      final m = 1 << ms;
+      final nm = n2 >>> ms;
       for (int k = 0, t = 0; k < n;) {
         final km = k + m;
         final p = complexArray[k];
@@ -307,7 +308,6 @@ class Radix2FFT extends FFT {
           t = 0;
         }
       }
-      m <<= 1;
     }
   }
 
@@ -347,13 +347,16 @@ class NaiveFFT extends _StridedFFT {
     final ioff = off + stride;
     if (w != null) {
       for (int ii = ioff, ji = 1; ji < _size; ii += stride, ++ji) {
-        inp[ii] = compMul(inp[ii], w[(ji * wstride) % w.length]);
+        final a = inp[ii];
+        final b = w[(ji * wstride) % w.length];
+        inp[ii] = Float64x2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
       }
     }
     for (int ii = ioff, ji = 1; ji < _size; ii += stride, ++ji) {
-      final p = inp[ii];
+      final a = inp[ii];
       for (int io = off, jj = 0, k = 0; k < _size; io += stride, jj += ji, ++k) {
-        out[io] += compMul(p, _twiddles[jj % _size]);
+        final b = _twiddles[jj % _size];
+        out[io] += Float64x2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
       }
     }
   }
@@ -455,7 +458,8 @@ class PrimePaddedFFT extends _StridedFFT {
     final n_ = size - 1;
     for (int q = 0; q < n_; ++q) {
       final j = multiplicativeInverseOfPrime(expMod(_g, q, size), size);
-      _b[q] = twiddle(size, j);
+      final t = -2 * math.pi * j / size;
+      _b[q] = Float64x2(math.cos(t), math.sin(t));
     }
     _fft._inPlaceFftImpl(_b);
   }
@@ -478,7 +482,9 @@ class PrimePaddedFFT extends _StridedFFT {
     final n_ = _size - 1;
     if (w != null) {
       for (int ii = off + stride, wi = wstride, ji = 1; ji < _size; ii += stride, wi += wstride, ++ji) {
-        inp[ii] = compMul(inp[ii], w[wi % w.length]);
+        final a = inp[ii];
+        final b = w[wi % w.length];
+        inp[ii] = Float64x2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
       }
     }
     for (int q = 0; q < n_; ++q) {
@@ -490,7 +496,9 @@ class PrimePaddedFFT extends _StridedFFT {
     // Cyclic convolution.
     _fft._inPlaceFftImpl(_a);
     for (int i = 0; i < _pn; ++i) {
-      _a[i] = compMul(_a[i], _b[i]);
+      final a = _a[i];
+      final b = _b[i];
+      _a[i] = Float64x2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
     }
     _fft.inPlaceInverseFft(_a);
 
@@ -516,15 +524,6 @@ class PrimePaddedFFT extends _StridedFFT {
   @override
   String toString() => 'PrimePaddedFFT($_size)';
 }
-
-// TODO: Get rid of this function.
-Float64x2 compMul(Float64x2 a, Float64x2 b) {
-  return Float64x2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
-}
-
-// TODO: Get rid of this function.
-Float64x2 rotor(double t) => Float64x2(math.cos(t), math.sin(t));
-Float64x2 twiddle(int n, int k) => rotor(-2 * math.pi * k / n);
 
 /// Extension methods for [Float64List], representing a windowing function.
 extension Window on Float64List {
