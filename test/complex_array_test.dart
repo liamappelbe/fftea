@@ -87,7 +87,15 @@ void main() {
       [1, 2, 3, 4],
     );
     expect(
+      toFloats(makeArray([1, 2, 3, 4, 5, 6]).discardConjugates()),
+      [1, 2, 3, 4],
+    );
+    expect(
       toFloats(makeArray([1, 2, 3, 4, 5, 6, 7, 8]).discardConjugates()),
+      [1, 2, 3, 4, 5, 6],
+    );
+    expect(
+      toFloats(makeArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).discardConjugates()),
       [1, 2, 3, 4, 5, 6],
     );
     expect(

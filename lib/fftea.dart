@@ -78,7 +78,7 @@ extension ComplexArray on Float64x2List {
   /// (sum term, ...terms..., nyquist term, ...conjugate terms...)
   ///
   /// The sum term, main terms, and nyquitst term, are kept. The conjugate terms
-  /// are discarded.
+  /// are discarded. For odd length arrays, the nyquist term doesn't exist.
   ///
   /// This method returns a new array (which is a view into the same data). It
   /// does not modify this array, or make a copy of the data.
@@ -101,7 +101,12 @@ abstract class FFT {
       throw ArgumentError('FFT size must be greater than 0.', 'size');
     }
     // TODO: Is NaiveFFT faster than Radix2FFT for small enough sizes?
-    // TODO: Is it more efficient to have a specific FFT for 2 and 3?
+    if (size == 2) {
+      return Fixed2FFT();
+    }
+    if (size == 3) {
+      return Fixed3FFT();
+    }
     if (isPow2) {
       return Radix2FFT(size);
     }
@@ -363,6 +368,75 @@ class NaiveFFT extends _StridedFFT {
 
   @override
   String toString() => 'NaiveFFT($_size)';
+}
+
+/// Performs FFTs (Fast Fourier Transforms) of size 2.
+class Fixed2FFT extends _StridedFFT {
+  /// Constructs an FFT object.
+  Fixed2FFT() : super._(2) {}
+
+  @override
+  void _inPlaceFftImpl(Float64x2List complexArray) {
+    _stridedFft(complexArray, complexArray, 1, 0, null, 0);
+  }
+
+  // Note: inp and out don't have to be distinct.
+  @override
+  void _stridedFft(Float64x2List inp, Float64x2List out, int stride, int off, Float64x2List? w, int wstride) {
+    final x0 = inp[off];
+    final off1 = off + stride;
+    Float64x2 x1 = inp[off1];
+    if (w != null) {
+      final b = w[wstride];
+      x1 = Float64x2(x1.x * b.x - x1.y * b.y, x1.x * b.y + x1.y * b.x);
+    }
+    out[off] = x0 + x1;
+    out[off1] = x0 - x1;
+  }
+
+  @override
+  String toString() => 'Fixed2FFT()';
+}
+
+/// Performs FFTs (Fast Fourier Transforms) of size 3.
+class Fixed3FFT extends _StridedFFT {
+  /// Constructs an FFT object.
+  Fixed3FFT() : super._(3) {}
+  static const double _tx = -0.5;
+  static const double _ty = -0.8660254037844387;
+
+  @override
+  void _inPlaceFftImpl(Float64x2List complexArray) {
+    _stridedFft(complexArray, complexArray, 1, 0, null, 0);
+  }
+
+  static final _twiddles = twiddleFactors(3);
+
+  // Note: inp and out don't have to be distinct.
+  @override
+  void _stridedFft(Float64x2List inp, Float64x2List out, int stride, int off, Float64x2List? w, int wstride) {
+    final x0 = inp[off];
+    final off1 = off + stride;
+    Float64x2 x1 = inp[off1];
+    final off2 = off1 + stride;
+    Float64x2 x2 = inp[off2];
+    if (w != null) {
+      final b1 = w[wstride];
+      x1 = Float64x2(x1.x * b1.x - x1.y * b1.y, x1.x * b1.y + x1.y * b1.x);
+      final b2 = w[wstride + wstride];
+      x2 = Float64x2(x2.x * b2.x - x2.y * b2.y, x2.x * b2.y + x2.y * b2.x);
+    }
+    final x12 = x1 + x2;
+    final dz = x1 - x2;
+    out[off] = x0 + x12;
+    final zx = x0 + x12 * Float64x2(_tx, _tx);
+    final zy = Float64x2(-_ty * dz.y, _ty * dz.x);
+    out[off1] = zx + zy;
+    out[off2] = zx - zy;
+  }
+
+  @override
+  String toString() => 'Fixed3FFT()';
 }
 
 class _CompositeFFTJob {
