@@ -105,7 +105,7 @@ def cplxToArray(c):
     [numpy.imag(z) for z in c],
   ]
 
-def generate(write, impl, sizes):
+def generate(write, impl, sizes, extraCtorArg = ''):
   write(kPreamble)
 
   def makeFftCase(n):
@@ -117,7 +117,7 @@ def generate(write, impl, sizes):
       return [b[0], b[1], f[0], f[1]]
     createDataset(matfile, maker)
     write("  test('%s %d', () async {" % (impl, n))
-    write("    await testFft('%s', %s(%d));" % (matfile, impl, n))
+    write("    await testFft('%s', %s(%d%s));" % (matfile, impl, n, extraCtorArg))
     write('  });\n')
 
   for n in sizes:
@@ -131,7 +131,7 @@ def generate(write, impl, sizes):
       return [a, f[0], f[1]]
     createDataset(matfile, maker)
     write("  test('Real %s %d', () async {" % (impl, n))
-    write("    await testRealFft('%s', %s(%d));" % (matfile, impl, n))
+    write("    await testRealFft('%s', %s(%d%s));" % (matfile, impl, n, extraCtorArg))
     write('  });\n')
 
   for n in sizes:
@@ -211,8 +211,10 @@ run(generate, 'radix2_fft_generated_test.dart', 'Radix2FFT',
     [2 ** i for i in range(11)])
 run(generate, 'naive_fft_generated_test.dart', 'NaiveFFT',
     [i + 1 for i in range(16)])
-run(generate, 'prime_padded_fft_generated_test.dart', 'PrimePaddedFFT',
-    [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 1009, 7919, 28657])
+run(generate, 'prime_padded_fft_generated_test.dart', 'PrimeFFT',
+    [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 1009, 7919, 28657], ', true')
+run(generate, 'prime_unpadded_fft_generated_test.dart', 'PrimeFFT',
+    [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 1009, 7919, 28657], ', false')
 run(generate, 'composite_fft_generated_test.dart', 'CompositeFFT',
     [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
 run(generate, 'fft_generated_test.dart', 'FFT',

@@ -30,6 +30,8 @@ class TestTimer {
     _watch.stop();
   }
 
+  int get micros => _watch.elapsedMicroseconds;
+
   @override
   String toString() {
     if (_runs == 0) return '';
@@ -46,85 +48,59 @@ void implBench(int size) {
     inp[i] = Float64x2(2 * rand.nextDouble() - 1, 2 * rand.nextDouble() - 1);
   }
 
-  final naiveFFT = size <= 300 ? fftea.NaiveFFT(size) : null;
   final primePaddedFFT =
       util.isPrime(size) && size > 2 ? fftea.PrimeFFT(size, true) : null;
   final primeUnpaddedFFT =
       util.isPrime(size) && size > 2 ? fftea.PrimeFFT(size, false) : null;
-  final compositeFFT = fftea.CompositeFFT(size);
-  final radix2FFT = util.isPowerOf2(size) ? fftea.Radix2FFT(size) : null;
-  final fft = fftea.FFT(size);
-  final naiveTimer = TestTimer();
-  final primePaddedTimer = TestTimer();
-  final primeUnpaddedTimer = TestTimer();
-  final compositeTimer = TestTimer();
-  final radix2Timer = TestTimer();
-  final fftTimer = TestTimer();
 
+  int padWins = 0;
+  int pad = 0;
+  int unpad = 0;
   for (var i = 0; i < kTestRuns; ++i) {
-    if (naiveFFT != null) {
-      final input = inp.sublist(0);
-      naiveTimer.start();
-      naiveFFT.inPlaceFft(input);
-      naiveTimer.stop();
-    }
+    final primePaddedTimer = TestTimer();
     if (primePaddedFFT != null) {
       final input = inp.sublist(0);
       primePaddedTimer.start();
       primePaddedFFT.inPlaceFft(input);
       primePaddedTimer.stop();
     }
+    final primeUnpaddedTimer = TestTimer();
     if (primeUnpaddedFFT != null) {
       final input = inp.sublist(0);
       primeUnpaddedTimer.start();
       primeUnpaddedFFT.inPlaceFft(input);
       primeUnpaddedTimer.stop();
     }
-    {
-      final input = inp.sublist(0);
-      compositeTimer.start();
-      compositeFFT.inPlaceFft(input);
-      compositeTimer.stop();
-    }
-    if (radix2FFT != null) {
-      final input = inp.sublist(0);
-      radix2Timer.start();
-      radix2FFT.inPlaceFft(input);
-      radix2Timer.stop();
-    }
-    {
-      final input = inp.sublist(0);
-      fftTimer.start();
-      fft.inPlaceFft(input);
-      fftTimer.stop();
+    unpad += primeUnpaddedTimer.micros;
+    pad += primePaddedTimer.micros;
+    if (primeUnpaddedTimer.micros > primePaddedTimer.micros) {
+      ++padWins;
     }
   }
-
-  print(
-    '$size, $fftTimer, $naiveTimer, $primePaddedTimer, $primeUnpaddedTimer, $compositeTimer, $radix2Timer',
-  );
+  final lpf = util.largestPrimeFactor(size - 1);
+  final padWinRate = padWins / kTestRuns;
+  final guessThatPaddingIsFaster = util.primePaddingHeuristic(size);
+  final paddingIsFaster = padWinRate > 0.9;
+  final paddingIsSlower = padWinRate < 0.1;
+  if (guessThatPaddingIsFaster) {
+    if (paddingIsSlower) {
+      print('FALSE_POSITIVE, $size, $lpf, $pad, $unpad, $padWinRate');
+    }
+  } else if (paddingIsFaster) {
+    print('FALSE_NEGATIVE, $size, $lpf, $pad, $unpad, $padWinRate');
+  }
 }
 
 List<int> generateBenchSizes() {
-  // All sizes from the unit tests.
-  final sizes = [1980, 2310, 2442, 3410, 4913, 7429, 7919, 28657].toSet();
-
-  // All sizes below 1024.
-  for (int i = 1; i < 1024; ++i) sizes.add(i);
-
-  // All powers of 2 up to 32k.
-  for (int i = 1024; i <= 32768; i *= 2) sizes.add(i);
-
-  // 1000 logarithmically distributed numbers between 1024 and 32768.
-  for (double i = 1024; i < 32768;) {
-    i *= 1.00347174851;
-    sizes.add(i.toInt());
+  final a = <int>[];
+  for (int i = 1; i < 1000; ++i) {
+    a.add(util.primes.getPrime(i));
   }
-  return sizes.toList()..sort();
+  return a;
 }
 
 void main() {
-  print('Size, FFT, NaiveFFT, PrimePaddedFFT, PrimeUnpaddedFFT, CompositeFFT, Radix2FFT');
+  print('Result, Size, LPF, PrimePaddedFFT, PrimeUnpaddedFFT, Pad Win Rate');
   for (final i in generateBenchSizes()) {
     implBench(i);
   }

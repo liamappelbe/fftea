@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// TODO: Test all utils
+// TODO: Migrate remaining large array tests to use matrix files
+// TODO: Test toString
+// TODO: Test FFT type selector
+// TODO: Test size 2 and 3 FFT
+// TODO: More documentation, especially of the utils.
+
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -90,46 +97,52 @@ extension ComplexArray on Float64x2List {
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.
 abstract class FFT {
+  //                    no flags,     isPow2,     shouldPrimePad,  isOddPrime
   static final _ffts = [<int, FFT>{}, <int, FFT>{}, <int, FFT>{}, <int, FFT>{}];
+  static _key(bool isPow2, bool isOddPrime, bool shouldPrimePad) =>
+      isPow2 ? 1 : (shouldPrimePad ? 2 : (isOddPrime ? 3 : 0));
+
   final int _size;
   FFT._(this._size);
 
-  // TODO: Tune this threshold. When is PrimePaddedFFT faster than NaiveFFT?
-  static const _kNaiveThreshold = 16;
-  static FFT _makeFFT(int size, bool isPow2, bool isOddPrime) {
+  static const _kAlwaysNaiveThreshold = 16;
+  static const _kCompositeNaiveThreshold = 24;
+  static FFT _makeFFT(int size, bool isPow2, bool isOddPrime, bool shouldPrimePad) {
     if (size <= 0) {
       throw ArgumentError('FFT size must be greater than 0.', 'size');
     }
-    // TODO: Is NaiveFFT faster than Radix2FFT for small enough sizes?
     if (size == 2) {
       return Fixed2FFT();
     }
     if (size == 3) {
       return Fixed3FFT();
     }
+    // TODO: Special case 4, and use it as a base case in CompositeFFT.
+    if (size < _kAlwaysNaiveThreshold) {
+      return NaiveFFT(size);
+    }
     if (isPow2) {
       return Radix2FFT(size);
     }
-    if (size < _kNaiveThreshold) {
+    if (size < _kCompositeNaiveThreshold) {
       return NaiveFFT(size);
     }
     if (isOddPrime) {
-      // TODO: Don't zero pad if (size - 1) is highly composite.
-      return PrimePaddedFFT(size);
+      return PrimeFFT(size, shouldPrimePad);
     }
     return CompositeFFT(size);
   }
 
-  static _key(bool isPow2, bool isOddPrime) =>
-      (isPow2 ? 2 : 0) + (isOddPrime ? 1 : 0);
-  static FFT _makeFFTCached(int size, bool isPow2, bool isOddPrime) =>
-      _ffts[_key(isPow2, isOddPrime)][size] ??=
-          _makeFFT(size, isPow2, isOddPrime);
+  static FFT _makeFFTCached(int size, bool isPow2, bool isOddPrime, bool shouldPrimePad) =>
+      _ffts[_key(isPow2, isOddPrime, shouldPrimePad)][size] ??=
+          _makeFFT(size, isPow2, isOddPrime, shouldPrimePad);
 
   /// Constructs an FFT object with the given size.
   factory FFT(int size) {
     final isPow2 = isPowerOf2(size);
-    return _makeFFTCached(size, isPow2, !isPow2 && isPrime(size));
+    final isOddPrime = !isPow2 && isPrime(size);
+    final shouldPrimePad = isOddPrime && primePaddingHeuristic(size);
+    return _makeFFTCached(size, isPow2, isOddPrime, shouldPrimePad);
   }
 
   /// The size of the FFTs that this object can do.
@@ -448,7 +461,7 @@ class _CompositeFFTJob {
   final Float64x2List w;
   final _StridedFFT fft;
   _CompositeFFTJob(this.buf, this.out, int s, this.nn, this.i, this.bi, this.w)
-      : fft = FFT._makeFFTCached(s, false, true) as _StridedFFT;
+      : fft = FFT._makeFFTCached(s, false, true, primePaddingHeuristic(s)) as _StridedFFT;
   void run() => fft._stridedFft(buf, out, nn, bi, w, i);
 }
 
@@ -514,20 +527,20 @@ class CompositeFFT extends FFT {
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.
 ///
 /// The size must be a prime number greater than 2, eg 3, 5, 7, 11 etc.
-class PrimePaddedFFT extends _StridedFFT {
+class PrimeFFT extends _StridedFFT {
   // TODO: Is Bluestein's algorithm faster?
   final int _g;
   final int _pn;
   final Float64x2List _a;
   final Float64x2List _b;
-  final Radix2FFT _fft;
+  final FFT _fft;
 
-  PrimePaddedFFT._(int size, int pn) :
+  PrimeFFT._(int size, bool padToPow2, int pn) :
       _g = primitiveRootOfPrime(size),
       _pn = pn,
       _a = Float64x2List(pn),
       _b = Float64x2List(pn),
-      _fft = FFT._makeFFTCached(pn, true, false) as Radix2FFT,
+      _fft = FFT._makeFFTCached(pn, padToPow2 || isPowerOf2(pn), false, false),
       super._(size) {
     final n_ = size - 1;
     for (int q = 0; q < n_; ++q) {
@@ -540,8 +553,12 @@ class PrimePaddedFFT extends _StridedFFT {
 
   /// Constructs an FFT object with the given size.
   ///
-  /// The size must be a prime number greater than 2, eg 3, 5, 7, 11 etc.
-  PrimePaddedFFT(int size) : this._(size, nextPowerOf2((size - 1) << 1));
+  /// The size must be a prime number greater than 2, eg 3, 5, 7, 11 etc. This
+  /// FFT works by delegating to an FFT of either `size - 1`, or padding it up
+  /// to a power of two. If `size - 1` is very composite, then not padding is
+  /// faster, but if `size - 1` is nearly prime, then padding is faster.
+  PrimeFFT(int size, bool padToPow2) :
+      this._(size, padToPow2, padToPow2 ? nextPowerOf2((size - 1) << 1) : size - 1);
 
   @override
   void _inPlaceFftImpl(Float64x2List complexArray) {
@@ -596,7 +613,7 @@ class PrimePaddedFFT extends _StridedFFT {
   }
 
   @override
-  String toString() => 'PrimePaddedFFT($_size)';
+  String toString() => 'PrimeFFT($_size)';
 }
 
 /// Extension methods for [Float64List], representing a windowing function.

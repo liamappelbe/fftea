@@ -92,6 +92,36 @@ List<int> primeFactors(int n) {
   return a;
 }
 
+/// Returns whether padding the PrimeFFT to a power of two size is likely to be
+/// faster than not padding it.
+///
+/// Experimentally, padding is usually a win when the largest prime factor of
+/// `n - 1` is greater than 5. We also special case a few small sizes where this
+/// simple heuristic is wrong.
+bool primePaddingHeuristic(int n) {
+  if (n == 19 || n == 31 || n == 61 || n == 101 || n == 241 || n == 251) {
+    return true;
+  }
+  int maxp = 1;
+  return largestPrimeFactor(n - 1) > 5;
+}
+
+int largestPrimeFactor(int n) {
+  int maxp = 1;
+  for (int i = 0, p = 2;;) {
+    if (p * p > n) break;
+    if (n % p != 0) {
+      i += 1;
+      p = primes.getPrime(i);
+    } else {
+      if (p > maxp) maxp = p;
+      n ~/= p;
+    }
+  }
+  if (n > maxp) maxp = n;
+  return maxp;
+}
+
 int highestBit(int x) {
   return ((x & 0xAAAAAAAAAAAAAAAA) != 0 ? 1 : 0) |
       ((x & 0xCCCCCCCCCCCCCCCC) != 0 ? 2 : 0) |

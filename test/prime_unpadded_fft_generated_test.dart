@@ -24,107 +24,107 @@ import 'util.dart';
 
 void main() {
   test('PrimeFFT 3', () async {
-    await testFft('test/data/fft_3.mat', PrimeFFT(3, true));
+    await testFft('test/data/fft_3.mat', PrimeFFT(3, false));
   });
 
   test('PrimeFFT 5', () async {
-    await testFft('test/data/fft_5.mat', PrimeFFT(5, true));
+    await testFft('test/data/fft_5.mat', PrimeFFT(5, false));
   });
 
   test('PrimeFFT 7', () async {
-    await testFft('test/data/fft_7.mat', PrimeFFT(7, true));
+    await testFft('test/data/fft_7.mat', PrimeFFT(7, false));
   });
 
   test('PrimeFFT 11', () async {
-    await testFft('test/data/fft_11.mat', PrimeFFT(11, true));
+    await testFft('test/data/fft_11.mat', PrimeFFT(11, false));
   });
 
   test('PrimeFFT 13', () async {
-    await testFft('test/data/fft_13.mat', PrimeFFT(13, true));
+    await testFft('test/data/fft_13.mat', PrimeFFT(13, false));
   });
 
   test('PrimeFFT 17', () async {
-    await testFft('test/data/fft_17.mat', PrimeFFT(17, true));
+    await testFft('test/data/fft_17.mat', PrimeFFT(17, false));
   });
 
   test('PrimeFFT 19', () async {
-    await testFft('test/data/fft_19.mat', PrimeFFT(19, true));
+    await testFft('test/data/fft_19.mat', PrimeFFT(19, false));
   });
 
   test('PrimeFFT 23', () async {
-    await testFft('test/data/fft_23.mat', PrimeFFT(23, true));
+    await testFft('test/data/fft_23.mat', PrimeFFT(23, false));
   });
 
   test('PrimeFFT 29', () async {
-    await testFft('test/data/fft_29.mat', PrimeFFT(29, true));
+    await testFft('test/data/fft_29.mat', PrimeFFT(29, false));
   });
 
   test('PrimeFFT 31', () async {
-    await testFft('test/data/fft_31.mat', PrimeFFT(31, true));
+    await testFft('test/data/fft_31.mat', PrimeFFT(31, false));
   });
 
   test('PrimeFFT 1009', () async {
-    await testFft('test/data/fft_1009.mat', PrimeFFT(1009, true));
+    await testFft('test/data/fft_1009.mat', PrimeFFT(1009, false));
   });
 
   test('PrimeFFT 7919', () async {
-    await testFft('test/data/fft_7919.mat', PrimeFFT(7919, true));
+    await testFft('test/data/fft_7919.mat', PrimeFFT(7919, false));
   });
 
   test('PrimeFFT 28657', () async {
-    await testFft('test/data/fft_28657.mat', PrimeFFT(28657, true));
+    await testFft('test/data/fft_28657.mat', PrimeFFT(28657, false));
   });
 
   test('Real PrimeFFT 3', () async {
-    await testRealFft('test/data/real_fft_3.mat', PrimeFFT(3, true));
+    await testRealFft('test/data/real_fft_3.mat', PrimeFFT(3, false));
   });
 
   test('Real PrimeFFT 5', () async {
-    await testRealFft('test/data/real_fft_5.mat', PrimeFFT(5, true));
+    await testRealFft('test/data/real_fft_5.mat', PrimeFFT(5, false));
   });
 
   test('Real PrimeFFT 7', () async {
-    await testRealFft('test/data/real_fft_7.mat', PrimeFFT(7, true));
+    await testRealFft('test/data/real_fft_7.mat', PrimeFFT(7, false));
   });
 
   test('Real PrimeFFT 11', () async {
-    await testRealFft('test/data/real_fft_11.mat', PrimeFFT(11, true));
+    await testRealFft('test/data/real_fft_11.mat', PrimeFFT(11, false));
   });
 
   test('Real PrimeFFT 13', () async {
-    await testRealFft('test/data/real_fft_13.mat', PrimeFFT(13, true));
+    await testRealFft('test/data/real_fft_13.mat', PrimeFFT(13, false));
   });
 
   test('Real PrimeFFT 17', () async {
-    await testRealFft('test/data/real_fft_17.mat', PrimeFFT(17, true));
+    await testRealFft('test/data/real_fft_17.mat', PrimeFFT(17, false));
   });
 
   test('Real PrimeFFT 19', () async {
-    await testRealFft('test/data/real_fft_19.mat', PrimeFFT(19, true));
+    await testRealFft('test/data/real_fft_19.mat', PrimeFFT(19, false));
   });
 
   test('Real PrimeFFT 23', () async {
-    await testRealFft('test/data/real_fft_23.mat', PrimeFFT(23, true));
+    await testRealFft('test/data/real_fft_23.mat', PrimeFFT(23, false));
   });
 
   test('Real PrimeFFT 29', () async {
-    await testRealFft('test/data/real_fft_29.mat', PrimeFFT(29, true));
+    await testRealFft('test/data/real_fft_29.mat', PrimeFFT(29, false));
   });
 
   test('Real PrimeFFT 31', () async {
-    await testRealFft('test/data/real_fft_31.mat', PrimeFFT(31, true));
+    await testRealFft('test/data/real_fft_31.mat', PrimeFFT(31, false));
   });
 
   test('Real PrimeFFT 1009', () async {
-    await testRealFft('test/data/real_fft_1009.mat', PrimeFFT(1009, true));
+    await testRealFft('test/data/real_fft_1009.mat', PrimeFFT(1009, false));
   });
 
   test('Real PrimeFFT 7919', () async {
-    await testRealFft('test/data/real_fft_7919.mat', PrimeFFT(7919, true));
+    await testRealFft('test/data/real_fft_7919.mat', PrimeFFT(7919, false));
   });
 
   test('Real PrimeFFT 28657', () async {
-    await testRealFft('test/data/real_fft_28657.mat', PrimeFFT(28657, true));
+    await testRealFft('test/data/real_fft_28657.mat', PrimeFFT(28657, false));
   });
 
 }
