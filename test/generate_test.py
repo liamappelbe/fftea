@@ -43,8 +43,11 @@ kPreamble = '''// Copyright 2022 The fftea authors
 //   python3 test/generate_test.py
 
 import 'dart:typed_data';
+
 import 'package:fftea/fftea.dart';
+import 'package:fftea/impl.dart';
 import 'package:test/test.dart';
+
 import 'util.dart';
 
 void main() {'''
@@ -219,5 +222,5 @@ run(generate, 'composite_fft_generated_test.dart', 'CompositeFFT',
     [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
 run(generate, 'fft_generated_test.dart', 'FFT',
     [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
-run(generateMisc, 'fftea_generated_misc_test.dart')
+run(generateMisc, 'misc_generated_test.dart')
 print('Done :)')

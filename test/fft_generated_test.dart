@@ -18,8 +18,11 @@
 //   python3 test/generate_test.py
 
 import 'dart:typed_data';
+
 import 'package:fftea/fftea.dart';
+import 'package:fftea/impl.dart';
 import 'package:test/test.dart';
+
 import 'util.dart';
 
 void main() {

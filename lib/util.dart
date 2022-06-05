@@ -15,9 +15,78 @@
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+/// Extension methods for [Float64x2List], representing a list of complex
+/// numbers.
+extension ComplexArray on Float64x2List {
+  /// Converts a real array to a [Float64x2List] of complex numbers.
+  static Float64x2List fromRealArray(List<double> reals) {
+    final a = Float64x2List(reals.length);
+    for (int i = 0; i < reals.length; ++i) {
+      a[i] = Float64x2(reals[i], 0);
+    }
+    return a;
+  }
+
+  /// Returns the real components of the [Float64x2List].
+  ///
+  /// This method just discards the imaginary components. It doesn't check
+  /// whether the imaginary components are actually close to zero.
+  Float64List toRealArray() {
+    final r = Float64List(length);
+    for (int i = 0; i < r.length; ++i) {
+      r[i] = this[i].x;
+    }
+    return r;
+  }
+
+  /// Returns the square magnitudes of the elements of the [Float64x2List].
+  ///
+  /// If you need the squares of the magnitudes, this method is much more
+  /// efficient than calling [magnitudes] then squaring those values.
+  Float64List squareMagnitudes() {
+    final m = Float64List(length);
+    for (int i = 0; i < m.length; ++i) {
+      final z = this[i];
+      m[i] = z.x * z.x + z.y * z.y;
+    }
+    return m;
+  }
+
+  /// Returns the magnitudes of the elements of the [Float64x2List].
+  Float64List magnitudes() {
+    final m = squareMagnitudes();
+    for (int i = 0; i < m.length; ++i) {
+      m[i] = math.sqrt(m[i]);
+    }
+    return m;
+  }
+
+  /// Discards redundant conjugate terms, assuming this is the result of a real
+  /// valued FFT. This method does not check whether those terms are actualy
+  /// redundant conjugate values.
+  ///
+  /// The result of a real valued FFT is about half redundant data, so the list
+  /// returned by this function omits that data:
+  ///
+  /// (sum term, ...terms..., nyquist term, ...conjugate terms...)
+  ///
+  /// The sum term, main terms, and nyquitst term, are kept. The conjugate terms
+  /// are discarded. For odd length arrays, the nyquist term doesn't exist.
+  ///
+  /// This method returns a new array (which is a view into the same data). It
+  /// does not modify this array, or make a copy of the data.
+  Float64x2List discardConjugates() {
+    return Float64x2List.sublistView(this, 0, (length >>> 1) + 1);
+  }
+}
+
 /// Returns whether x is a power of two: 1, 2, 4, 8, ...
 bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
 
+/// Prime number generator.
+///
+/// Maintains an internal list of prime numbers, which it uses to generate new
+/// prime numbers.
 class Primes {
   final _p = <int>[2, 3, 5, 7];
   int _n = 9;
@@ -37,11 +106,20 @@ class Primes {
       }
     }
   }
+
+  /// Returns the [i]th prime number.
+  ///
+  /// WARNING: This will generate and store every prime number below the [i]th.
+  /// That can be very expensive. That's why the [isPrime], [primeDecomp] etc
+  /// are carefully implemented to only request primes up to `sqrt(n)`.
   int getPrime(int i) {
     while (_p.length <= i) _addPrime();
     return _p[i];
   }
 }
+
+/// Static [Primes] object used to cache prime numbers between all the functions
+/// that need prime numbers.
 final primes = Primes();
 
 bool isPrime(int n) {
