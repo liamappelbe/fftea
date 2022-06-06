@@ -48,7 +48,7 @@ import 'package:fftea/fftea.dart';
 import 'package:fftea/impl.dart';
 import 'package:test/test.dart';
 
-import 'util.dart';
+import 'test_util.dart';
 
 void main() {'''
 
@@ -111,6 +111,11 @@ def cplxToArray(c):
 def generate(write, impl, sizes, extraCtorArg = ''):
   write(kPreamble)
 
+  def ctor(n):
+    if impl.startswith('Fixed'):
+      return '%s()' % impl
+    return '%s(%d%s)' % (impl, n, extraCtorArg)
+
   def makeFftCase(n):
     matfile = 'test/data/fft_%d.mat' % n
     def maker():
@@ -120,7 +125,7 @@ def generate(write, impl, sizes, extraCtorArg = ''):
       return [b[0], b[1], f[0], f[1]]
     createDataset(matfile, maker)
     write("  test('%s %d', () async {" % (impl, n))
-    write("    await testFft('%s', %s(%d%s));" % (matfile, impl, n, extraCtorArg))
+    write("    await testFft('%s', %s);" % (matfile, ctor(n)))
     write('  });\n')
 
   for n in sizes:
@@ -134,7 +139,7 @@ def generate(write, impl, sizes, extraCtorArg = ''):
       return [a, f[0], f[1]]
     createDataset(matfile, maker)
     write("  test('Real %s %d', () async {" % (impl, n))
-    write("    await testRealFft('%s', %s(%d%s));" % (matfile, impl, n, extraCtorArg))
+    write("    await testRealFft('%s', %s);" % (matfile, ctor(n)))
     write('  });\n')
 
   for n in sizes:
@@ -210,6 +215,8 @@ def run(gen, filename, *args):
   with open(outFile, 'w') as f:
     gen(writer(f), *args)
 
+run(generate, 'fixed2_fft_generated_test.dart', 'Fixed2FFT', [2])
+run(generate, 'fixed3_fft_generated_test.dart', 'Fixed3FFT', [3])
 run(generate, 'radix2_fft_generated_test.dart', 'Radix2FFT',
     [2 ** i for i in range(11)])
 run(generate, 'naive_fft_generated_test.dart', 'NaiveFFT',

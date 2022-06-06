@@ -23,7 +23,7 @@ import 'package:fftea/fftea.dart';
 import 'package:fftea/impl.dart';
 import 'package:test/test.dart';
 
-import 'util.dart';
+import 'test_util.dart';
 
 void main() {
   test('PrimeFFT 3', () async {

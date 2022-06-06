@@ -473,6 +473,7 @@ class CompositeFFT extends FFT {
 /// if `size - 1` has large prime factors, then padding is faster. This decision
 /// is made by [primePaddingHeuristic].
 class PrimeFFT extends _StridedFFT {
+  final bool _padToPow2;
   final int _g;
   final int _pn;
   final Float64x2List _a;
@@ -480,6 +481,7 @@ class PrimeFFT extends _StridedFFT {
   final FFT _fft;
 
   PrimeFFT._(int size, bool padToPow2, int pn) :
+      _padToPow2 = padToPow2,
       _g = primitiveRootOfPrime(size),
       _pn = pn,
       _a = Float64x2List(pn),
@@ -553,5 +555,5 @@ class PrimeFFT extends _StridedFFT {
   }
 
   @override
-  String toString() => 'PrimeFFT($_size)';
+  String toString() => 'PrimeFFT($_size, $_padToPow2)';
 }

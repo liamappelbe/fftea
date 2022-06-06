@@ -12,10 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO: Migrate remaining large array tests to use matrix files
-// TODO: Update README
-// TODO: Include impl benchmarks in README
+// GENERATED FILE. DO NOT EDIT.
 
-export 'impl.dart' show FFT;
-export 'util.dart' show ComplexArray;
-export 'stft.dart';
+// Test cases generated with numpy as a reference implementation, using:
+//   python3 test/generate_test.py
+
+import 'dart:typed_data';
+
+import 'package:fftea/fftea.dart';
+import 'package:fftea/impl.dart';
+import 'package:test/test.dart';
+
+import 'test_util.dart';
+
+void main() {
+  test('Fixed2FFT 2', () async {
+    await testFft('test/data/fft_2.mat', Fixed2FFT());
+  });
+
+  test('Real Fixed2FFT 2', () async {
+    await testRealFft('test/data/real_fft_2.mat', Fixed2FFT());
+  });
+
+}
+

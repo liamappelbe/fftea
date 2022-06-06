@@ -15,7 +15,7 @@
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
 import 'package:test/test.dart';
-import 'util.dart';
+import 'test_util.dart';
 
 void main() {
   test('ComplexArray copying', () {

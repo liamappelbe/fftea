@@ -18,7 +18,7 @@ import 'dart:typed_data';
 import 'package:fftea/util.dart';
 import 'package:test/test.dart';
 
-import 'util.dart';
+import 'test_util.dart';
 
 void main() {
   test('isPowerOf2', () {
