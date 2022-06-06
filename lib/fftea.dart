@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO: Test all utils
 // TODO: Migrate remaining large array tests to use matrix files
 // TODO: Test toString
 // TODO: Test FFT type selector
 // TODO: Test size 2 and 3 FFT
-// TODO: More documentation, especially of the utils.
+// TODO: Update README
+// TODO: Include impl benchmarks in README
 
 export 'impl.dart' show FFT;
 export 'util.dart' show ComplexArray;

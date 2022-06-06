@@ -43,7 +43,6 @@ abstract class FFT {
     if (size == 3) {
       return Fixed3FFT();
     }
-    // TODO: Special case 4, and use it as a base case in CompositeFFT.
     if (size < _kAlwaysNaiveThreshold) {
       return NaiveFFT(size);
     }
@@ -418,8 +417,6 @@ class CompositeFFT extends FFT {
 
   /// Constructs an FFT object with the given size.
   CompositeFFT(int size) : _buf = Float64x2List(size), _out = Float64x2List(size), _twiddles = twiddleFactors(size), _perm = Uint64List(size), super._(size) {
-    // TODO: Investigate combining the smaller factors into larger factors that
-    // are still smaller than the _kNaiveThreshold. Is this faster?
     final decomp = primeDecomp(size);
     for (int i = 0; i < decomp.length; ++i) {
       _ffts.add(<_CompositeFFTJob>[]);
@@ -512,7 +509,6 @@ class PrimeFFT extends _StridedFFT {
   // Note: inp and out don't have to be distinct.
   @override
   void _stridedFft(Float64x2List inp, Float64x2List out, int stride, int off, Float64x2List? w, int wstride) {
-    // https://doi.org/10.1109/PROC.1968.6477
     // Primitive root permutation.
     final n_ = _size - 1;
     if (w != null) {

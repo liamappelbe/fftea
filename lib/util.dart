@@ -80,7 +80,7 @@ extension ComplexArray on Float64x2List {
   }
 }
 
-/// Returns whether x is a power of two: 1, 2, 4, 8, ...
+/// Returns whether [x] is a power of two: 1, 2, 4, 8, ...
 bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
 
 /// Prime number generator.
@@ -90,19 +90,24 @@ bool isPowerOf2(int x) => (x > 0) && ((x & (x - 1)) == 0);
 class Primes {
   final _p = <int>[2, 3, 5, 7];
   int _n = 9;
-  bool _isPrime(int n) {
-    for (final p in _p) {
-      if (p * p > n) return true;
-      if (n % p == 0) return false;
+
+  /// Returns whether [odd_n] is prime, assuming it's an odd number. This is
+  /// only public for testing. Use the public [isPrime] function instead.
+  bool internalIsPrime(int odd_n) {
+    for (int i = 1;; ++i) {
+      final p = i < _p.length ? _p[i] : addPrime();
+      if (p * p > odd_n) return true;
+      if (odd_n % p == 0) return false;
     }
-    return true;
   }
-  void _addPrime() {
+
+  /// Adds the next prime and returns it.
+  int addPrime() {
     while (true) {
       _n += 2;
-      if (_isPrime(_n)) {
+      if (internalIsPrime(_n)) {
         _p.add(_n);
-        break;
+        return _n;
       }
     }
   }
@@ -113,26 +118,29 @@ class Primes {
   /// That can be very expensive. That's why the [isPrime], [primeDecomp] etc
   /// are carefully implemented to only request primes up to `sqrt(n)`.
   int getPrime(int i) {
-    while (_p.length <= i) _addPrime();
+    while (_p.length <= i) addPrime();
     return _p[i];
   }
+
+  /// Returns the number of primes that are currently cached.
+  int get numPrimes => _p.length;
 }
 
 /// Static [Primes] object used to cache prime numbers between all the functions
 /// that need prime numbers.
 final primes = Primes();
 
+/// Returns whether [n] is a prime number.
 bool isPrime(int n) {
-  // TODO: Maybe implement Baillie–PSW?
   if (n <= 1) return false;
-  for (int i = 0, p = 2;;) {
-    if (p * p > n) return true;
-    if (n % p == 0) return false;
-    i += 1;
-    p = primes.getPrime(i);
-  }
+  if (n == 2) return true;
+  if (n % 2 == 0) return false;
+  return primes.internalIsPrime(n);
 }
 
+/// Returns the prime decomposition of [n].
+///
+/// For example, 120 returns `[2, 2, 2, 3, 5]`.
 List<int> primeDecomp(int n) {
   final a = <int>[];
   for (int i = 0, p = 2;;) {
@@ -149,6 +157,9 @@ List<int> primeDecomp(int n) {
   return a;
 }
 
+/// Returns the unique prime factors of [n].
+///
+/// For example, 120 returns `[2, 3, 5]`.
 List<int> primeFactors(int n) {
   bool newp = true;
   final a = <int>[];
@@ -170,20 +181,9 @@ List<int> primeFactors(int n) {
   return a;
 }
 
-/// Returns whether padding the PrimeFFT to a power of two size is likely to be
-/// faster than not padding it.
+/// Returns the largest prime factor of [n].
 ///
-/// Experimentally, padding is usually a win when the largest prime factor of
-/// `n - 1` is greater than 5. We also special case a few small sizes where this
-/// simple heuristic is wrong.
-bool primePaddingHeuristic(int n) {
-  if (n == 19 || n == 31 || n == 61 || n == 101 || n == 241 || n == 251) {
-    return true;
-  }
-  int maxp = 1;
-  return largestPrimeFactor(n - 1) > 5;
-}
-
+/// For example, 120 returns 5.
 int largestPrimeFactor(int n) {
   int maxp = 1;
   for (int i = 0, p = 2;;) {
@@ -200,6 +200,21 @@ int largestPrimeFactor(int n) {
   return maxp;
 }
 
+/// Returns whether padding the PrimeFFT to a power of two size is likely to be
+/// faster than not padding it.
+///
+/// Experimentally, padding is usually a win when the largest prime factor of
+/// `n - 1` is greater than 5. We also special case a few small sizes where this
+/// simple heuristic is wrong.
+bool primePaddingHeuristic(int n) {
+  if (n == 19 || n == 31 || n == 61 || n == 101 || n == 241 || n == 251) {
+    return true;
+  }
+  int maxp = 1;
+  return largestPrimeFactor(n - 1) > 5;
+}
+
+/// Returns the highest set bit of [x], where [x] is a power of 2.
 int highestBit(int x) {
   return ((x & 0xAAAAAAAAAAAAAAAA) != 0 ? 1 : 0) |
       ((x & 0xCCCCCCCCCCCCCCCC) != 0 ? 2 : 0) |
@@ -209,6 +224,7 @@ int highestBit(int x) {
       ((x & 0xFFFFFFFF00000000) != 0 ? 32 : 0);
 }
 
+/// Returns the smallest power of two equal or greater than [x].
 int nextPowerOf2(int x) {
   --x;
   x |= x >> 1;
@@ -221,7 +237,7 @@ int nextPowerOf2(int x) {
   return x;
 }
 
-// Returns the primitive root of n. WARNING: Assumes n is a prime > 2.
+/// Returns the primitive root of [n], where [n] is a prime > 2.
 int primitiveRootOfPrime(int n) {
   int e = n - 1;
   final d = primeFactors(e);
@@ -240,7 +256,7 @@ int primitiveRootOfPrime(int n) {
   }
 }
 
-// Returns g^k mod n.
+/// Returns g^k mod n.
 int expMod(int g, int k, int n) {
   int y = 1;
   while (k > 0) {
@@ -253,21 +269,23 @@ int expMod(int g, int k, int n) {
   return y;
 }
 
-// Returns the multiplicative inverse of x mod n, where n is a prime.
+/// Returns the multiplicative inverse of x mod n, where n is a prime.
 int multiplicativeInverseOfPrime(int x, int n) {
   return expMod(x, n - 2, n);
 }
 
-Float64x2List twiddleFactors(int size) {
-  final twiddles = Float64x2List(size);
-  final dt = -2 * math.pi / size;
-  final half = size ~/ 2;
+/// Returns the twiddle factors for an FFT of size [n]. Aka the complex n-th
+/// roots of 1.
+Float64x2List twiddleFactors(int n) {
+  final twiddles = Float64x2List(n);
+  final dt = -2 * math.pi / n;
+  final half = n ~/ 2;
   for (int i = 0; i <= half; ++i) {
     final t = i * dt;
     twiddles[i] = Float64x2(math.cos(t), math.sin(t));
   }
-  for (int i = (size + 1) ~/ 2; i < size; ++i) {
-    final a = twiddles[size - i];
+  for (int i = (n + 1) ~/ 2; i < n; ++i) {
+    final a = twiddles[n - i];
     twiddles[i] = Float64x2(a.x, -a.y);
   }
   return twiddles;
