@@ -15,9 +15,9 @@ is useful for all sorts of applications:
   spectrograms)
 - Convolutions, such as reverb filters for audio, or blurring filters for images
 
-This library supports FFT of power-of-two sized arrays of real or complex
-numbers, using the Cooley-Tukey algorithm. It also includes some related
-utilities, such as windowing functions, STFT, and inverse FFT.
+This library supports FFT of real or complex arrays of any size. It also
+includes some related utilities, such as windowing functions, STFT, and inverse
+FFT.
 
 ## Usage
 
@@ -73,11 +73,39 @@ nyquist frequency) of the spectrogram will be
 
 See the example for more detailed usage.
 
+## Technical Details
+
+Fast Fourier Transform isn't really a single algorithm. It's a family of
+algorithms that all try to perform the Discreet Fourier Transform (DFT) in
+O(n\*log(n)) time (a naive implementation of DFT is O(n^2)), where n is the size
+of the input array. These algorithms differ mainly by what kind of array sizes
+they can handle. For example, some FFT algorithms can only handle power of two
+sized arrays, while others can only handle prime number sized arrays.
+
+Many FFT libraries only support power of two arrays. The reason for this is that
+it's relatively easy to implement an efficient FFT algorithm for power of two
+sizes arrays, using the Cooley-Tukey algorithm.
+
+In general, Cooley-Tukey algorithm actually works for any non-prime array size,
+by breaking it down into its prime factors. Powers of two just happen to be
+particularly fast and easy to implement.
+
+This library handles arbitrary sizes by using Cooley-Tukey to break the size
+into its prime factors, and then using Rader's algorithm to handle large prime
+factors, or a naive O(n^2) implementation which is faster for small factors.
+
+There's also a special Radix2FFT implementation for power of two FFTs that is
+much faster than the other implementations.
+
+Check out the various implementations of FFT in lib/impl.dart for more details.
+
 ## Benchmarks
 
 This package was built because package:fft is not actively maintained anymore,
-and wasn't a particularly efficient implementation. There are a few
-improvements that make this implementation more efficient:
+isn't veey efficient, and only supports power of two FFTs. This package aims to
+support FFTs of any size efficiently, and to make power of two FFTs particularly
+fast. There are a few improvements that make this Radix2FFT implementation
+efficient:
 
 - The main FFT class is constructed with a given size, so that the twiddle
   factors only have to be calculated once. This is particularly handy for STFT.
@@ -85,13 +113,16 @@ improvements that make this implementation more efficient:
   Every little wrapper class is a seperate allocation and dereference. For inner
   loop code, like FFT's complex number math, this makes a big difference.
   Float64x2 can also take advantage of SIMD optimisations.
-- FFT algorithm is in-place, so no additional arrays are allocated.
+- The FFT algorithm is in-place, so no additional arrays are allocated.
 - Loop based FFT, rather than recursive.
 - Using trigonometric tricks to only calculate a quarter of the twiddle factors.
 - Bithacks
 
-I found some other promising FFT implementations, so I decided to benchmark them
-too: scidart, and smart_signal_processing.
+I found some other promising Dart FFT implementations, so I decided to benchmark
+them too: scidart, and smart_signal_processing. package:fft and
+smart_signal_processing only support power of two arrays. Scidart supports
+arrays of any size, but for other sizes they use naive DFT, which is much slower.
+So for this first set of benchmarks I'm just testing power of two sizes.
 
 To run the benchmarks:
 

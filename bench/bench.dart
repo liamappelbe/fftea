@@ -16,6 +16,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:fft/fft.dart' as fft;
 import 'package:fftea/fftea.dart' as fftea;
+import 'package:fftea/impl.dart' as fftea_impl;
 import 'package:scidart/numdart.dart' as numdart;
 import 'package:scidart/scidart.dart' as scidart;
 import 'package:smart_signal_processing/src/fft.dart' as smart;
@@ -53,7 +54,7 @@ void bench(int sizeLog2) {
     inp[i] = 2 * rand.nextDouble() - 1;
   }
 
-  final ffteaFFTCached = fftea.FFT(size);
+  final ffteaFFTCached = fftea_impl.Radix2FFT(size);
   final fftTimer = TestTimer();
   final smartTimer = TestTimer();
   final smartInPlaceTimer = TestTimer();
@@ -114,7 +115,7 @@ void bench(int sizeLog2) {
     // fftea
     {
       ffteaTimer.start();
-      fftea.FFT(size).realFft(inp);
+      fftea_impl.Radix2FFT(size).realFft(inp);
       ffteaTimer.stop();
     }
 
