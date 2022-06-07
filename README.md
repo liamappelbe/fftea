@@ -141,15 +141,15 @@ is not included in the benchmark. Run in Ubuntu on a Dell XPS 13.
 
 | Size | package:fft | smart | smart, in-place | scidart | scidart, in-place* | fftea | fftea, cached | fftea, in-place, cached |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 16 | 455.9 us | 32.5 us | 10.6 us | 400.8 us | 157.0 us | 86.6 us | 42.1 us | 42.9 us |
-| 64 | 538.8 us | 5.3 us | 2.7 us | 274.5 us | 252.6 us | 136.4 us | 119.0 us | 102.5 us |
-| 256 | 493.1 us | 12.8 us | 10.4 us | 899.1 us | 808.6 us | 96.4 us | 68.3 us | 58.0 us |
-| 2^10 | 1.65 ms | 44.4 us | 43.5 us | 8.71 ms | 8.66 ms | 39.8 us | 28.6 us | 24.6 us |
-| 2^12 | 7.61 ms | 188.9 us | 183.9 us | 134.41 ms | 125.13 ms | 135.2 us | 118.1 us | 108.2 us |
-| 2^14 | 41.08 ms | 885.4 us | 840.5 us | 2.08 s | 2.07 s | 654.9 us | 592.3 us | 489.3 us |
-| 2^16 | 242.88 ms | 5.60 ms | 5.30 ms | 45.40 s | 51.85 s | 3.65 ms | 6.77 ms | 2.57 ms |
-| 2^18 | 1.21 s | 24.99 ms | 24.25 ms | Skipped | Skipped | 15.28 ms | 13.94 ms | 10.65 ms |
-| 2^20 | 7.03 s | 162.97 ms | 146.55 ms | Skipped | Skipped | 95.38 ms | 101.17 ms | 73.54 ms |
+| 16 | 998.1 us | 82.8 us | 33.2 us | 866.8 us | 421.9 us | 205.6 us | 108.9 us | 117.0 us |
+| 64 | 749.3 us | 8.0 us | 4.8 us | 345.2 us | 267.7 us | 154.0 us | 129.7 us | 122.5 us |
+| 256 | 718.1 us | 20.2 us | 18.6 us | 1.37 ms | 1.35 ms | 162.1 us | 116.7 us | 113.6 us |
+| 2^10 | 2.57 ms | 74.7 us | 70.0 us | 14.73 ms | 14.73 ms | 59.9 us | 45.5 us | 41.4 us |
+| 2^12 | 12.37 ms | 308.7 us | 298.4 us | 196.49 ms | 185.56 ms | 214.3 us | 189.6 us | 173.8 us |
+| 2^14 | 60.13 ms | 1.30 ms | 1.25 ms | 2.97 s | 2.76 s | 1.04 ms | 853.4 us | 707.9 us |
+| 2^16 | 343.80 ms | 8.33 ms | 7.47 ms | 60.12 s | 59.22 s | 5.18 ms | 9.29 ms | 3.46 ms |
+| 2^18 | 1.96 s | 56.16 ms | 47.19 ms | Skipped | Skipped | 32.35 ms | 22.66 ms | 16.57 ms |
+| 2^20 | 10.89 s | 246.60 ms | 234.52 ms | Skipped | Skipped | 166.65 ms | 132.99 ms | 124.25 ms |
 
 In practice, you usually know how big your FFT is ahead of time, so it's pretty
 easy to construct your FFT object once, to take advantage of the caching. It's
@@ -157,10 +157,19 @@ sometimes possible to take advantage of the in-place speed up too, for example
 if you have to copy your data from another source anyway you may as well
 construct the flat complex array yourself. Since this isn't always possible,
 the "fftea, cached" times are probably the most representative. In that case,
-fftea is about 60-80x faster than package:fft, and about 30% faster than
+fftea is about 60-80x faster than package:fft, and about 70% faster than
 smart_signal_processing. Not sure what's going on with scidart, but it seems to
 be O(n^2).
 
 \* Scidart's FFT doesn't have an in-place mode, but they do use a custom format,
 so in-place means that the time to convert to that format is not included in the
 benchmark.
+
+I also benchmarked fftea's various implementations of FFT at different sizes,
+using bench/impl_bench.dart.
+
+This graph shows how the different implementations perform at different sizes.
+
+This graph shows how the performance of the implementation selected by the
+`FFT.FFT` constructor, which attempts to automatically pick the right
+implementation for the given size.

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Benchmarks Radix2FFT vs a few other FFT implementations.
+
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:fft/fft.dart' as fft;
