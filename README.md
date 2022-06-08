@@ -197,11 +197,11 @@ benchmark.
 I also benchmarked fftea's various implementations of FFT at different sizes,
 using bench/impl_bench.dart.
 
-![Performance of different fftea implementations](/bench/impl_bench_1.png)
+![Performance of different fftea implementations](https://github.com/liamappelbe/fftea/raw/main/bench/impl_bench_1.png)
 
 This graph shows how the different implementations perform at different sizes.
 
-![Performance of FFT.FFT constructor](/bench/impl_bench_2.png)
+![Performance of FFT.FFT constructor](https://github.com/liamappelbe/fftea/raw/main/bench/impl_bench_2.png)
 
 This graph shows the performance of the implementation selected by the `FFT.FFT`
 constructor, which attempts to automatically pick the right implementation for
