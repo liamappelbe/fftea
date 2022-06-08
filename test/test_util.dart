@@ -66,17 +66,31 @@ Future<void> testRealFft(String filename, FFT fft) async {
   expectClose(a, raw[0]);
 }
 
-void testStft(
-  int chunkSize,
-  int chunkStride,
-  List<double> inp,
-  List<List<double>> exp,
-) {
-  final stft = STFT(chunkSize, Window.hanning(chunkSize));
-  final result = stft.runAndCopy(inp, chunkStride);
-  expect(result.length, exp.length);
+Future<void> testWindow(String filename, Float64List window) async {
+  final raw = await readMatFile(filename);
+  expect(raw.length, 1);
+  expectClose(window, raw[0]);
+}
+
+Future<void> testWindowApplyReal(String filename, Float64List window) async {
+  final raw = await readMatFile(filename);
+  expect(raw.length, 2);
+  expectClose(window.applyWindowReal(raw[0]), raw[1]);
+}
+
+Future<void> testWindowApplyComplex(String filename, Float64List window) async {
+  final raw = await readMatFile(filename);
+  expect(raw.length, 4);
+  expectClose2(
+      window.applyWindow(makeArray2(raw[0], raw[1])), makeArray2(raw[2], raw[3]));
+}
+
+Future<void> testStft(String filename, STFT stft, int chunkStride) async {
+  final raw = await readMatFile(filename);
+  final result = stft.runAndCopy(raw[0], chunkStride);
+  expect(result.length, (raw.length - 1) / 2);
   for (int i = 0; i < result.length; ++i) {
-    expectClose(toFloats(result[i]), exp[i]);
+    expectClose2(result[i], makeArray2(raw[2 * i + 1], raw[2 * i + 2]));
   }
 }
 

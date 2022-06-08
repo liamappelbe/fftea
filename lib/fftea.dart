@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO: Migrate remaining large array tests to use matrix files
-// TODO: Include impl benchmarks in README
-
 export 'impl.dart' show FFT;
 export 'util.dart' show ComplexArray;
 export 'stft.dart';

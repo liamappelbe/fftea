@@ -151,61 +151,78 @@ def generateMisc(write):
   write(kPreamble)
 
   def makeWindowCase(n, name, fn):
-    write("  test('Window %s %d', () {" % (name, n))
-    write('    expectClose(')
-    write('      Window.%s(%s),' % (name, n))
-    write('      [%s],' % realBufStr(fn(n)))
-    write('    );')
+    matfile = 'test/data/window_%s_%d.mat' % (name, n)
+    def maker():
+      return [fn(n)]
+    createDataset(matfile, maker)
+    write("  test('Window %s %d', () async {" % (name, n))
+    write("    await testWindow('%s', Window.%s(%s));" % (matfile, name, n))
     write('  });\n')
 
-  makeWindowCase(16, 'hamming', numpy.hamming)
-  makeWindowCase(16, 'hanning', numpy.hanning)
-  makeWindowCase(16, 'bartlett', numpy.bartlett)
-  makeWindowCase(16, 'blackman', numpy.blackman)
-
-  def makeWindowApplyCase(n):
-    a = [randReal(10) for i in range(n)]
-    b = numpy.hamming(n) * a
-    c = [randCplx(10) for i in range(n)]
-    d = numpy.hamming(n) * c
-    write("  test('Window apply %d', () {" % n)
-    write('    final w = Window.hamming(16);')
-    write('    final a = [%s];' % realBufStr(a))
-    write('    expectClose(')
-    write('      w.applyWindowReal(Float64List.fromList(a)),')
-    write('      [%s],' % realBufStr(b))
-    write('    );');
-    write('    final b = [%s];' % cplxBufStr(c))
-    write('    expectClose(')
-    write('      toFloats(w.applyWindow(makeArray(b))),')
-    write('      [%s],' % cplxBufStr(d))
-    write('    );');
+  def makeWindowApplyRealCase(n, name, fn):
+    matfile = 'test/data/window_apply_real_%s_%d.mat' % (name, n)
+    def maker():
+      a = [randReal(10) for i in range(n)]
+      b = fn(n) * a
+      return [a, b]
+    createDataset(matfile, maker)
+    write("  test('Window apply real %s %d', () async {" % (name, n))
+    write("    await testWindowApplyReal('%s', Window.%s(%s));" % (
+        matfile, name, n))
     write('  });\n')
 
-  makeWindowApplyCase(16)
+  def makeWindowApplyComplexCase(n, name, fn):
+    matfile = 'test/data/window_apply_complex_%s_%d.mat' % (name, n)
+    def maker():
+      a = [randReal(10) for i in range(n)]
+      b = cplxToArray(fn(n) * a)
+      a_ = cplxToArray(a)
+      return [a_[0], a_[1], b[0], b[1]]
+    createDataset(matfile, maker)
+    write("  test('Window apply complex %s %d', () async {" % (name, n))
+    write("    await testWindowApplyComplex('%s', Window.%s(%s));" % (
+        matfile, name, n))
+    write('  });\n')
 
-  def makeStftCase(n, pn, nc, cs):
-    a = [randReal(10) if i < n else 0 for i in range(pn)]
-    w = numpy.hanning(nc)
-    b = []
-    i = 0
-    while (i + nc) <= len(a):
-      b.append(numpy.fft.fft(a[i:(i+nc)] * w))
-      i += cs
-    write("  test('STFT %d %d %d %d', () {" % (n, pn, nc, cs))
-    write('    testStft(')
-    write('      %s,' % nc)
-    write('      %s,' % cs)
-    write('      [%s],' % realBufStr(a[:n]))
-    write('      [')
-    for c in b:
-      write('      [%s],' % cplxBufStr(c))
-    write('      ],')
-    write('    );')
-    write('  });')
+  for i in [1, 2, 3, 16, 47]:
+    makeWindowCase(i, 'hamming', numpy.hamming)
+    makeWindowCase(i, 'hanning', numpy.hanning)
+    makeWindowCase(i, 'bartlett', numpy.bartlett)
+    makeWindowCase(i, 'blackman', numpy.blackman)
+    makeWindowApplyRealCase(i, 'hamming', numpy.hamming)
+    makeWindowApplyComplexCase(i, 'hamming', numpy.hamming)
 
-  makeStftCase(128, 128, 16, 8)
-  makeStftCase(47, 51, 16, 5)
+  def makeStftCase(n, chunkSize, chunkStride, windowName = None, windowFn = None):
+    padn = math.ceil((n - chunkSize) / chunkStride) * chunkStride + chunkSize
+    hasWin = windowName is not None
+    wn = windowName if hasWin else 'null'
+    matfile = 'test/data/stft_%s_%d_%d_%d.mat' % (
+        wn, n, chunkSize, chunkStride)
+    def maker():
+      a = [randReal(10) if i < n else 0 for i in range(padn)]
+      w = windowFn(chunkSize) if hasWin else None
+      b = [a]
+      i = 0
+      while (i + chunkSize) <= len(a):
+        z = a[i:(i+chunkSize)]
+        if hasWin:
+          z = z * w
+        f = cplxToArray(numpy.fft.fft(z))
+        b.append(f[0])
+        b.append(f[1])
+        i += chunkStride
+      return b
+    createDataset(matfile, maker)
+    winCtor = ', Window.%s(%s)' % (windowName, chunkSize) if hasWin else ''
+    write("  test('STFT %s %d %d %d', () async {" % (wn, n, chunkSize, chunkStride))
+    write("    await testStft('%s', STFT(%d%s), %d);" % (matfile, chunkSize, winCtor, chunkStride))
+    write('  });\n')
+
+  for n in [47, 128, 1234]:
+    for chunkSize in [16, 23]:
+      for chunkStride in [5, chunkSize]:
+        makeStftCase(n, chunkSize, chunkStride)
+        makeStftCase(n, chunkSize, chunkStride, 'hamming', numpy.hamming)
 
   write('}\n')
 

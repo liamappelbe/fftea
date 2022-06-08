@@ -63,9 +63,17 @@ extension Window on Float64List {
     return c;
   }
 
-  static Float64List _fillSecondHalf(Float64List a) {
-    final half = a.length >>> 1;
-    final n = a.length - 1;
+  static Float64List _makeWindow(int size, double Function(int) fn) {
+    final a = Float64List(size);
+    if (size == 1) {
+      a[0] = 1;
+      return a;
+    }
+    final half = size >>> 1;
+    final n = size - 1;
+    for (int i = 0; i <= half; ++i) {
+      a[i] = fn(i);
+    }
     for (int i = 0; i < half; ++i) {
       a[n - i] = a[i];
     }
@@ -76,14 +84,9 @@ extension Window on Float64List {
   ///
   /// `w[i] = 1 - amp - amp * cos(2πi / (size - 1))`
   static Float64List cosine(int size, double amplitude) {
-    final a = Float64List(size);
-    final half = size >>> 1;
     final offset = 1 - amplitude;
     final scale = 2 * math.pi / (size - 1);
-    for (int i = 0; i <= half; ++i) {
-      a[i] = offset - amplitude * math.cos(scale * i);
-    }
-    return _fillSecondHalf(a);
+    return _makeWindow(size, (i) => offset - amplitude * math.cos(scale * i));
   }
 
   /// Returns a Hanning window.
@@ -103,13 +106,8 @@ extension Window on Float64List {
   /// This is essentially just a triangular window.
   /// `w[i] = 1 - |2i / (size - 1) - 1|`
   static Float64List bartlett(int size) {
-    final a = Float64List(size);
-    final half = size >>> 1;
     final offset = (size - 1) / 2;
-    for (int i = 0; i <= half; ++i) {
-      a[i] = 1 - (i / offset - 1).abs();
-    }
-    return _fillSecondHalf(a);
+    return _makeWindow(size, (i) => 1 - (i / offset - 1).abs());
   }
 
   /// Returns a Blackman window.
@@ -117,14 +115,11 @@ extension Window on Float64List {
   /// This is a more elaborate kind of cosine window.
   /// `w[i] = 0.42 - 0.5 * cos(2πi / (size - 1)) + 0.08 * cos(4πi / (size - 1))`
   static Float64List blackman(int size) {
-    final a = Float64List(size);
-    final half = size >>> 1;
     final scale = 2 * math.pi / (size - 1);
-    for (int i = 0; i <= half; ++i) {
+    return _makeWindow(size, (i) {
       final t = i * scale;
-      a[i] = 0.42 - 0.5 * math.cos(t) + 0.08 * math.cos(2 * t);
-    }
-    return _fillSecondHalf(a);
+      return 0.42 - 0.5 * math.cos(t) + 0.08 * math.cos(2 * t);
+    });
   }
 }
 
