@@ -15,7 +15,7 @@
 name: fftea
 version: 1.1.0
 description: >
-  Fast Fourier Transform (FFT) library that can handle buffers of any size.
+  Fast Fourier Transform (FFT) library that can handle inputs of any size.
   Includes related tools such as STFT and windowing.
 repository: https://github.com/liamappelbe/fftea
 
