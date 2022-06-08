@@ -13,5 +13,5 @@
 // limitations under the License.
 
 export 'impl.dart' show FFT;
-export 'util.dart' show ComplexArray;
 export 'stft.dart';
+export 'util.dart' show ComplexArray;

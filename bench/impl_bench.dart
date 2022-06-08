@@ -104,19 +104,24 @@ void implBench(int size) {
   }
 
   print(
-    '$size, $fftTimer, $naiveTimer, $primePaddedTimer, $primeUnpaddedTimer, $compositeTimer, $radix2Timer',
+    '$size, $fftTimer, $naiveTimer, $primePaddedTimer, $primeUnpaddedTimer, '
+    '$compositeTimer, $radix2Timer',
   );
 }
 
 List<int> generateBenchSizes() {
   // All sizes from the unit tests.
-  final sizes = [1980, 2310, 2442, 3410, 4913, 7429, 7919, 28657].toSet();
+  final sizes = {1980, 2310, 2442, 3410, 4913, 7429, 7919, 28657};
 
   // All sizes below 1024.
-  for (int i = 1; i < 1024; ++i) sizes.add(i);
+  for (int i = 1; i < 1024; ++i) {
+    sizes.add(i);
+  }
 
   // All powers of 2 up to 32k.
-  for (int i = 1024; i <= 32768; i *= 2) sizes.add(i);
+  for (int i = 1024; i <= 32768; i *= 2) {
+    sizes.add(i);
+  }
 
   // 1000 logarithmically distributed numbers between 1024 and 32768.
   for (double i = 1024; i < 32768;) {
@@ -127,7 +132,10 @@ List<int> generateBenchSizes() {
 }
 
 void main() {
-  print('Size, FFT, NaiveFFT, PrimePaddedFFT, PrimeUnpaddedFFT, CompositeFFT, Radix2FFT');
+  print(
+    'Size, FFT, NaiveFFT, PrimePaddedFFT, PrimeUnpaddedFFT, CompositeFFT, '
+    'Radix2FFT',
+  );
   for (final i in generateBenchSizes()) {
     implBench(i);
   }

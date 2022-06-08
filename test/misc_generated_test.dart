@@ -15,9 +15,10 @@
 // GENERATED FILE. DO NOT EDIT.
 
 // Test cases generated with numpy as a reference implementation, using:
-//   python3 test/generate_test.py
+//   python3 test/generate_test.py && dart format .
 
-import 'dart:typed_data';
+// ignore_for_file: unused_import
+// ignore_for_file: require_trailing_commas
 
 import 'package:fftea/fftea.dart';
 import 'package:fftea/impl.dart';
@@ -43,11 +44,13 @@ void main() {
   });
 
   test('Window apply real hamming 1', () async {
-    await testWindowApplyReal('test/data/window_apply_real_hamming_1.mat', Window.hamming(1));
+    await testWindowApplyReal(
+        'test/data/window_apply_real_hamming_1.mat', Window.hamming(1));
   });
 
   test('Window apply complex hamming 1', () async {
-    await testWindowApplyComplex('test/data/window_apply_complex_hamming_1.mat', Window.hamming(1));
+    await testWindowApplyComplex(
+        'test/data/window_apply_complex_hamming_1.mat', Window.hamming(1));
   });
 
   test('Window hamming 2', () async {
@@ -67,11 +70,13 @@ void main() {
   });
 
   test('Window apply real hamming 2', () async {
-    await testWindowApplyReal('test/data/window_apply_real_hamming_2.mat', Window.hamming(2));
+    await testWindowApplyReal(
+        'test/data/window_apply_real_hamming_2.mat', Window.hamming(2));
   });
 
   test('Window apply complex hamming 2', () async {
-    await testWindowApplyComplex('test/data/window_apply_complex_hamming_2.mat', Window.hamming(2));
+    await testWindowApplyComplex(
+        'test/data/window_apply_complex_hamming_2.mat', Window.hamming(2));
   });
 
   test('Window hamming 3', () async {
@@ -91,11 +96,13 @@ void main() {
   });
 
   test('Window apply real hamming 3', () async {
-    await testWindowApplyReal('test/data/window_apply_real_hamming_3.mat', Window.hamming(3));
+    await testWindowApplyReal(
+        'test/data/window_apply_real_hamming_3.mat', Window.hamming(3));
   });
 
   test('Window apply complex hamming 3', () async {
-    await testWindowApplyComplex('test/data/window_apply_complex_hamming_3.mat', Window.hamming(3));
+    await testWindowApplyComplex(
+        'test/data/window_apply_complex_hamming_3.mat', Window.hamming(3));
   });
 
   test('Window hamming 16', () async {
@@ -115,11 +122,13 @@ void main() {
   });
 
   test('Window apply real hamming 16', () async {
-    await testWindowApplyReal('test/data/window_apply_real_hamming_16.mat', Window.hamming(16));
+    await testWindowApplyReal(
+        'test/data/window_apply_real_hamming_16.mat', Window.hamming(16));
   });
 
   test('Window apply complex hamming 16', () async {
-    await testWindowApplyComplex('test/data/window_apply_complex_hamming_16.mat', Window.hamming(16));
+    await testWindowApplyComplex(
+        'test/data/window_apply_complex_hamming_16.mat', Window.hamming(16));
   });
 
   test('Window hamming 47', () async {
@@ -139,11 +148,13 @@ void main() {
   });
 
   test('Window apply real hamming 47', () async {
-    await testWindowApplyReal('test/data/window_apply_real_hamming_47.mat', Window.hamming(47));
+    await testWindowApplyReal(
+        'test/data/window_apply_real_hamming_47.mat', Window.hamming(47));
   });
 
   test('Window apply complex hamming 47', () async {
-    await testWindowApplyComplex('test/data/window_apply_complex_hamming_47.mat', Window.hamming(47));
+    await testWindowApplyComplex(
+        'test/data/window_apply_complex_hamming_47.mat', Window.hamming(47));
   });
 
   test('STFT null 47 16 5', () async {
@@ -151,7 +162,8 @@ void main() {
   });
 
   test('STFT hamming 47 16 5', () async {
-    await testStft('test/data/stft_hamming_47_16_5.mat', STFT(16, Window.hamming(16)), 5);
+    await testStft(
+        'test/data/stft_hamming_47_16_5.mat', STFT(16, Window.hamming(16)), 5);
   });
 
   test('STFT null 47 16 16', () async {
@@ -159,7 +171,8 @@ void main() {
   });
 
   test('STFT hamming 47 16 16', () async {
-    await testStft('test/data/stft_hamming_47_16_16.mat', STFT(16, Window.hamming(16)), 16);
+    await testStft('test/data/stft_hamming_47_16_16.mat',
+        STFT(16, Window.hamming(16)), 16);
   });
 
   test('STFT null 47 23 5', () async {
@@ -167,7 +180,8 @@ void main() {
   });
 
   test('STFT hamming 47 23 5', () async {
-    await testStft('test/data/stft_hamming_47_23_5.mat', STFT(23, Window.hamming(23)), 5);
+    await testStft(
+        'test/data/stft_hamming_47_23_5.mat', STFT(23, Window.hamming(23)), 5);
   });
 
   test('STFT null 47 23 23', () async {
@@ -175,7 +189,8 @@ void main() {
   });
 
   test('STFT hamming 47 23 23', () async {
-    await testStft('test/data/stft_hamming_47_23_23.mat', STFT(23, Window.hamming(23)), 23);
+    await testStft('test/data/stft_hamming_47_23_23.mat',
+        STFT(23, Window.hamming(23)), 23);
   });
 
   test('STFT null 128 16 5', () async {
@@ -183,7 +198,8 @@ void main() {
   });
 
   test('STFT hamming 128 16 5', () async {
-    await testStft('test/data/stft_hamming_128_16_5.mat', STFT(16, Window.hamming(16)), 5);
+    await testStft(
+        'test/data/stft_hamming_128_16_5.mat', STFT(16, Window.hamming(16)), 5);
   });
 
   test('STFT null 128 16 16', () async {
@@ -191,7 +207,8 @@ void main() {
   });
 
   test('STFT hamming 128 16 16', () async {
-    await testStft('test/data/stft_hamming_128_16_16.mat', STFT(16, Window.hamming(16)), 16);
+    await testStft('test/data/stft_hamming_128_16_16.mat',
+        STFT(16, Window.hamming(16)), 16);
   });
 
   test('STFT null 128 23 5', () async {
@@ -199,7 +216,8 @@ void main() {
   });
 
   test('STFT hamming 128 23 5', () async {
-    await testStft('test/data/stft_hamming_128_23_5.mat', STFT(23, Window.hamming(23)), 5);
+    await testStft(
+        'test/data/stft_hamming_128_23_5.mat', STFT(23, Window.hamming(23)), 5);
   });
 
   test('STFT null 128 23 23', () async {
@@ -207,7 +225,8 @@ void main() {
   });
 
   test('STFT hamming 128 23 23', () async {
-    await testStft('test/data/stft_hamming_128_23_23.mat', STFT(23, Window.hamming(23)), 23);
+    await testStft('test/data/stft_hamming_128_23_23.mat',
+        STFT(23, Window.hamming(23)), 23);
   });
 
   test('STFT null 1234 16 5', () async {
@@ -215,7 +234,8 @@ void main() {
   });
 
   test('STFT hamming 1234 16 5', () async {
-    await testStft('test/data/stft_hamming_1234_16_5.mat', STFT(16, Window.hamming(16)), 5);
+    await testStft('test/data/stft_hamming_1234_16_5.mat',
+        STFT(16, Window.hamming(16)), 5);
   });
 
   test('STFT null 1234 16 16', () async {
@@ -223,7 +243,8 @@ void main() {
   });
 
   test('STFT hamming 1234 16 16', () async {
-    await testStft('test/data/stft_hamming_1234_16_16.mat', STFT(16, Window.hamming(16)), 16);
+    await testStft('test/data/stft_hamming_1234_16_16.mat',
+        STFT(16, Window.hamming(16)), 16);
   });
 
   test('STFT null 1234 23 5', () async {
@@ -231,7 +252,8 @@ void main() {
   });
 
   test('STFT hamming 1234 23 5', () async {
-    await testStft('test/data/stft_hamming_1234_23_5.mat', STFT(23, Window.hamming(23)), 5);
+    await testStft('test/data/stft_hamming_1234_23_5.mat',
+        STFT(23, Window.hamming(23)), 5);
   });
 
   test('STFT null 1234 23 23', () async {
@@ -239,8 +261,7 @@ void main() {
   });
 
   test('STFT hamming 1234 23 23', () async {
-    await testStft('test/data/stft_hamming_1234_23_23.mat', STFT(23, Window.hamming(23)), 23);
+    await testStft('test/data/stft_hamming_1234_23_23.mat',
+        STFT(23, Window.hamming(23)), 23);
   });
-
 }
-

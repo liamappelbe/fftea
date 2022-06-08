@@ -16,7 +16,6 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'impl.dart';
-import 'util.dart';
 
 /// Extension methods for [Float64List], representing a windowing function.
 extension Window on Float64List {

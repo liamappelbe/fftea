@@ -91,13 +91,13 @@ class Primes {
   final _p = <int>[2, 3, 5, 7];
   int _n = 9;
 
-  /// Returns whether [odd_n] is prime, assuming it's an odd number. This is
-  /// only public for testing. Use the public [isPrime] function instead.
-  bool internalIsPrime(int odd_n) {
+  /// Returns whether [oddN] is prime, assuming it's an odd number. This is only
+  /// public for testing. Use the public [isPrime] function instead.
+  bool internalIsPrime(int oddN) {
     for (int i = 1;; ++i) {
       final p = i < _p.length ? _p[i] : addPrime();
-      if (p * p > odd_n) return true;
-      if (odd_n % p == 0) return false;
+      if (p * p > oddN) return true;
+      if (oddN % p == 0) return false;
     }
   }
 
@@ -118,7 +118,9 @@ class Primes {
   /// That can be very expensive. That's why the [isPrime], [primeDecomp] etc
   /// are carefully implemented to only request primes up to `sqrt(n)`.
   int getPrime(int i) {
-    while (_p.length <= i) addPrime();
+    while (_p.length <= i) {
+      addPrime();
+    }
     return _p[i];
   }
 
@@ -134,7 +136,7 @@ final primes = Primes();
 bool isPrime(int n) {
   if (n <= 1) return false;
   if (n == 2) return true;
-  if (n % 2 == 0) return false;
+  if (n.isEven) return false;
   return primes.internalIsPrime(n);
 }
 
@@ -177,7 +179,7 @@ List<int> primeFactors(int n) {
       n ~/= p;
     }
   }
-  if (n != 1 && (a.length == 0 || a.last != n)) a.add(n);
+  if (n != 1 && (a.isEmpty || a.last != n)) a.add(n);
   return a;
 }
 
@@ -207,10 +209,7 @@ int largestPrimeFactor(int n) {
 /// `n - 1` is greater than 5. We also special case a few small sizes where this
 /// simple heuristic is wrong.
 bool primePaddingHeuristic(int n) {
-  if (n == 31 || n == 61 || n == 101 || n == 241 || n == 251) {
-    return true;
-  }
-  int maxp = 1;
+  if (n == 31 || n == 61 || n == 101 || n == 241 || n == 251) return true;
   return largestPrimeFactor(n - 1) > 5;
 }
 

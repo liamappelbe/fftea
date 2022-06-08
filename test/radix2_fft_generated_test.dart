@@ -15,9 +15,10 @@
 // GENERATED FILE. DO NOT EDIT.
 
 // Test cases generated with numpy as a reference implementation, using:
-//   python3 test/generate_test.py
+//   python3 test/generate_test.py && dart format .
 
-import 'dart:typed_data';
+// ignore_for_file: unused_import
+// ignore_for_file: require_trailing_commas
 
 import 'package:fftea/fftea.dart';
 import 'package:fftea/impl.dart';
@@ -113,6 +114,4 @@ void main() {
   test('Real Radix2FFT 1024', () async {
     await testRealFft('test/data/real_fft_1024.mat', Radix2FFT(1024));
   });
-
 }
-

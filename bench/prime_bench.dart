@@ -17,7 +17,6 @@
 
 import 'dart:math';
 import 'dart:typed_data';
-import 'package:fftea/fftea.dart' as fftea;
 import 'package:fftea/impl.dart' as fftea_impl;
 import 'package:fftea/util.dart' as util;
 

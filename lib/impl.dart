@@ -25,7 +25,7 @@ import 'util.dart';
 abstract class FFT {
   //                    no flags,     isPow2,     shouldPrimePad,  isOddPrime
   static final _ffts = [<int, FFT>{}, <int, FFT>{}, <int, FFT>{}, <int, FFT>{}];
-  static _key(bool isPow2, bool isOddPrime, bool shouldPrimePad) =>
+  static int _key(bool isPow2, bool isOddPrime, bool shouldPrimePad) =>
       isPow2 ? 1 : (shouldPrimePad ? 2 : (isOddPrime ? 3 : 0));
 
   final int _size;
@@ -33,7 +33,12 @@ abstract class FFT {
 
   static const _kAlwaysNaiveThreshold = 16;
   static const _kCompositeNaiveThreshold = 24;
-  static FFT _makeFFT(int size, bool isPow2, bool isOddPrime, bool shouldPrimePad) {
+  static FFT _makeFFT(
+    int size,
+    bool isPow2,
+    bool isOddPrime,
+    bool shouldPrimePad,
+  ) {
     if (size <= 0) {
       throw ArgumentError('FFT size must be greater than 0.', 'size');
     }
@@ -58,7 +63,12 @@ abstract class FFT {
     return CompositeFFT(size);
   }
 
-  static FFT _makeFFTCached(int size, bool isPow2, bool isOddPrime, bool shouldPrimePad) =>
+  static FFT _makeFFTCached(
+    int size,
+    bool isPow2,
+    bool isOddPrime,
+    bool shouldPrimePad,
+  ) =>
       _ffts[_key(isPow2, isOddPrime, shouldPrimePad)][size] ??=
           _makeFFT(size, isPow2, isOddPrime, shouldPrimePad);
 
@@ -267,7 +277,14 @@ abstract class _StridedFFT extends FFT {
 
   // Note: inp and out may or may not need to be distinct. If you don't know the
   // underlying implementation, assume they need to be distinct.
-  void _stridedFft(Float64x2List inp, Float64x2List out, int stride, int off, Float64x2List? w, int wstride);
+  void _stridedFft(
+    Float64x2List inp,
+    Float64x2List out,
+    int stride,
+    int off,
+    Float64x2List? w,
+    int wstride,
+  );
 }
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.
@@ -280,7 +297,10 @@ class NaiveFFT extends _StridedFFT {
   final Float64x2List _buf;
 
   /// Constructs an FFT object with the given size.
-  NaiveFFT(int size) : _twiddles = twiddleFactors(size), _buf = Float64x2List(size), super._(size) {}
+  NaiveFFT(int size)
+      : _twiddles = twiddleFactors(size),
+        _buf = Float64x2List(size),
+        super._(size);
 
   @override
   void _inPlaceFftImpl(Float64x2List complexArray) {
@@ -290,7 +310,14 @@ class NaiveFFT extends _StridedFFT {
 
   // Note: inp and out must be distinct.
   @override
-  void _stridedFft(Float64x2List inp, Float64x2List out, int stride, int off, Float64x2List? w, int wstride) {
+  void _stridedFft(
+    Float64x2List inp,
+    Float64x2List out,
+    int stride,
+    int off,
+    Float64x2List? w,
+    int wstride,
+  ) {
     final x0 = inp[off];
     for (int io = off, st = 0; st < _size; io += stride, ++st) {
       out[io] = x0;
@@ -305,7 +332,9 @@ class NaiveFFT extends _StridedFFT {
     }
     for (int ii = ioff, ji = 1; ji < _size; ii += stride, ++ji) {
       final a = inp[ii];
-      for (int io = off, jj = 0, k = 0; k < _size; io += stride, jj += ji, ++k) {
+      for (int io = off, jj = 0, k = 0;
+          k < _size;
+          io += stride, jj += ji, ++k) {
         final b = _twiddles[jj % _size];
         out[io] += Float64x2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);
       }
@@ -321,7 +350,7 @@ class NaiveFFT extends _StridedFFT {
 /// This is mainly useful as a base case of [CompositeFFT].
 class Fixed2FFT extends _StridedFFT {
   /// Constructs an FFT object.
-  Fixed2FFT() : super._(2) {}
+  Fixed2FFT() : super._(2);
 
   @override
   void _inPlaceFftImpl(Float64x2List complexArray) {
@@ -330,7 +359,14 @@ class Fixed2FFT extends _StridedFFT {
 
   // Note: inp and out don't have to be distinct.
   @override
-  void _stridedFft(Float64x2List inp, Float64x2List out, int stride, int off, Float64x2List? w, int wstride) {
+  void _stridedFft(
+    Float64x2List inp,
+    Float64x2List out,
+    int stride,
+    int off,
+    Float64x2List? w,
+    int wstride,
+  ) {
     final x0 = inp[off];
     final off1 = off + stride;
     Float64x2 x1 = inp[off1];
@@ -351,7 +387,7 @@ class Fixed2FFT extends _StridedFFT {
 /// This is mainly useful as a base case of [CompositeFFT].
 class Fixed3FFT extends _StridedFFT {
   /// Constructs an FFT object.
-  Fixed3FFT() : super._(3) {}
+  Fixed3FFT() : super._(3);
   static const double _tx = -0.5;
   static const double _ty = -0.8660254037844387;
 
@@ -360,11 +396,16 @@ class Fixed3FFT extends _StridedFFT {
     _stridedFft(complexArray, complexArray, 1, 0, null, 0);
   }
 
-  static final _twiddles = twiddleFactors(3);
-
   // Note: inp and out don't have to be distinct.
   @override
-  void _stridedFft(Float64x2List inp, Float64x2List out, int stride, int off, Float64x2List? w, int wstride) {
+  void _stridedFft(
+    Float64x2List inp,
+    Float64x2List out,
+    int stride,
+    int off,
+    Float64x2List? w,
+    int wstride,
+  ) {
     final x0 = inp[off];
     final off1 = off + stride;
     Float64x2 x1 = inp[off1];
@@ -399,7 +440,8 @@ class _CompositeFFTJob {
   final Float64x2List w;
   final _StridedFFT fft;
   _CompositeFFTJob(this.buf, this.out, int s, this.nn, this.i, this.bi, this.w)
-      : fft = FFT._makeFFTCached(s, false, true, primePaddingHeuristic(s)) as _StridedFFT;
+      : fft = FFT._makeFFTCached(s, false, true, primePaddingHeuristic(s))
+            as _StridedFFT;
   void run() => fft._stridedFft(buf, out, nn, bi, w, i);
 }
 
@@ -416,7 +458,12 @@ class CompositeFFT extends FFT {
   final _ffts = <List<_CompositeFFTJob>>[];
 
   /// Constructs an FFT object with the given size.
-  CompositeFFT(int size) : _buf = Float64x2List(size), _out = Float64x2List(size), _twiddles = twiddleFactors(size), _perm = Uint64List(size), super._(size) {
+  CompositeFFT(int size)
+      : _buf = Float64x2List(size),
+        _out = Float64x2List(size),
+        _twiddles = twiddleFactors(size),
+        _perm = Uint64List(size),
+        super._(size) {
     final decomp = primeDecomp(size);
     for (int i = 0; i < decomp.length; ++i) {
       _ffts.add(<_CompositeFFTJob>[]);
@@ -425,7 +472,16 @@ class CompositeFFT extends FFT {
     _innerBuf = (decomp.length % 2 != 0) ? _buf : _out;
   }
 
-  void _ctorRec(Float64x2List buf, Float64x2List out, List<int> decomp, int n, int stride, int off, int boff, int di) {
+  void _ctorRec(
+    Float64x2List buf,
+    Float64x2List out,
+    List<int> decomp,
+    int n,
+    int stride,
+    int off,
+    int boff,
+    int di,
+  ) {
     if (di >= decomp.length) {
       _perm[off] = boff;
       return;
@@ -436,7 +492,16 @@ class CompositeFFT extends FFT {
     final nn = n ~/ s;
 
     for (int i = 0; i < s; ++i) {
-      _ctorRec(out, buf, decomp, nn, ss, i * stride + off, boff + i * nn, di + 1);
+      _ctorRec(
+        out,
+        buf,
+        decomp,
+        nn,
+        ss,
+        i * stride + off,
+        boff + i * nn,
+        di + 1,
+      );
     }
 
     final ffts = _ffts[di];
@@ -480,14 +545,15 @@ class PrimeFFT extends _StridedFFT {
   final Float64x2List _b;
   final FFT _fft;
 
-  PrimeFFT._(int size, bool padToPow2, int pn) :
-      _padToPow2 = padToPow2,
-      _g = primitiveRootOfPrime(size),
-      _pn = pn,
-      _a = Float64x2List(pn),
-      _b = Float64x2List(pn),
-      _fft = FFT._makeFFTCached(pn, padToPow2 || isPowerOf2(pn), false, false),
-      super._(size) {
+  PrimeFFT._(int size, bool padToPow2, int pn)
+      : _padToPow2 = padToPow2,
+        _g = primitiveRootOfPrime(size),
+        _pn = pn,
+        _a = Float64x2List(pn),
+        _b = Float64x2List(pn),
+        _fft =
+            FFT._makeFFTCached(pn, padToPow2 || isPowerOf2(pn), false, false),
+        super._(size) {
     final n_ = size - 1;
     for (int q = 0; q < n_; ++q) {
       final j = multiplicativeInverseOfPrime(expMod(_g, q, size), size);
@@ -500,8 +566,12 @@ class PrimeFFT extends _StridedFFT {
   /// Constructs an FFT object with the given size.
   ///
   /// The size must be a prime number greater than 2, eg 3, 5, 7, 11 etc.
-  PrimeFFT(int size, bool padToPow2) :
-      this._(size, padToPow2, padToPow2 ? nextPowerOf2((size - 1) << 1) : size - 1);
+  PrimeFFT(int size, bool padToPow2)
+      : this._(
+          size,
+          padToPow2,
+          padToPow2 ? nextPowerOf2((size - 1) << 1) : size - 1,
+        );
 
   @override
   void _inPlaceFftImpl(Float64x2List complexArray) {
@@ -510,11 +580,20 @@ class PrimeFFT extends _StridedFFT {
 
   // Note: inp and out don't have to be distinct.
   @override
-  void _stridedFft(Float64x2List inp, Float64x2List out, int stride, int off, Float64x2List? w, int wstride) {
+  void _stridedFft(
+    Float64x2List inp,
+    Float64x2List out,
+    int stride,
+    int off,
+    Float64x2List? w,
+    int wstride,
+  ) {
     // Primitive root permutation.
     final n_ = _size - 1;
     if (w != null) {
-      for (int ii = off + stride, wi = wstride, ji = 1; ji < _size; ii += stride, wi += wstride, ++ji) {
+      for (int ii = off + stride, wi = wstride, ji = 1;
+          ji < _size;
+          ii += stride, wi += wstride, ++ji) {
         final a = inp[ii];
         final b = w[wi % w.length];
         inp[ii] = Float64x2(a.x * b.x - a.y * b.y, a.x * b.y + a.y * b.x);

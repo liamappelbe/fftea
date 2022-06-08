@@ -21,6 +21,7 @@ Float64List toFloats(Float64x2List a) => Float64List.sublistView(a);
 Float64x2List makeArray(List<double> values) {
   return Float64x2List.sublistView(Float64List.fromList(values));
 }
+
 Float64x2List makeArray2(List<double> real, List<double> imag) {
   if (real.length != imag.length) {
     throw ArgumentError('real and imag should be the same length');
@@ -82,7 +83,9 @@ Future<void> testWindowApplyComplex(String filename, Float64List window) async {
   final raw = await readMatFile(filename);
   expect(raw.length, 4);
   expectClose2(
-      window.applyWindow(makeArray2(raw[0], raw[1])), makeArray2(raw[2], raw[3]));
+    window.applyWindow(makeArray2(raw[0], raw[1])),
+    makeArray2(raw[2], raw[3]),
+  );
 }
 
 Future<void> testStft(String filename, STFT stft, int chunkStride) async {
