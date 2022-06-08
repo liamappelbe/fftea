@@ -202,7 +202,7 @@ def generateMisc(write):
     def maker():
       a = [randReal(10) if i < n else 0 for i in range(padn)]
       w = windowFn(chunkSize) if hasWin else None
-      b = [a]
+      b = [a[:n]]
       i = 0
       while (i + chunkSize) <= len(a):
         z = a[i:(i+chunkSize)]

@@ -156,7 +156,7 @@ class STFT {
   ///
   /// The input is broken up into chunks, windowed, FFT'd, and then passed to
   /// [reportChunk]. If there isn't enough data in the input to fill the final
-  /// chunk, it is padded with zeros.
+  /// chunk, it is padded with zeros. Does not allocate any arrays.
   ///
   /// When using a windowing function, it is recommended that you overlap the
   /// chunks by setting [chunkStride] to less than the chunk size. Once one
@@ -203,7 +203,8 @@ class STFT {
   ///
   /// This method is the same as [run], except that it copies all the results to
   /// a [List<Float64x2List>] and returns it. It's a convenience method, but
-  /// isn't as efficient as run. See [run] for more details.
+  /// isn't as efficient as run (this method allocated a lot of arrays). See
+  /// [run] for more details.
   List<Float64x2List> runAndCopy(List<double> input, [int chunkStride = 0]) {
     final o = <Float64x2List>[];
     run(input, (Float64x2List f) => o.add(f.sublist(0)), chunkStride);

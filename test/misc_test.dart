@@ -14,6 +14,7 @@
 
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
+import 'package:fftea/impl.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -87,6 +88,69 @@ void main() {
     expect(stft.frequency(2, 32), 1);
     expect(stft.frequency(8, 32), 4);
     expect(stft.frequency(32, 1024), 512);
+  });
+
+  test('FFT bad size', () {
+    expect(
+      () => FFT(0),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be greater than 0.',
+        ),
+      ),
+    );
+    expect(
+      () => FFT(-123),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be greater than 0.',
+        ),
+      ),
+    );
+    expect(
+      () => Radix2FFT(0),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
+    expect(
+      () => Radix2FFT(-123),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
+    expect(
+      () => Radix2FFT(3),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
+    expect(
+      () => Radix2FFT(257),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
   });
 
   test('FFT input data wrong length', () {

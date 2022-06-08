@@ -71,6 +71,24 @@ nyquist frequency) of the spectrogram will be
 
 See the example for more detailed usage.
 
+## Performance Tips
+
+If you need to squeeze every last CPU cycle out of your FFT, try these tips:
+
+- Construct your `FFT` object once, and reuse it, rather than constructing it
+  each time you want to do an FFT.
+- Avoid unnecessary array allocations. If you need to do many FFTs, try reusing
+  the same input array, and just overwrite the data. All the FFT methods have
+  documentation stating whether they allocate any new arrays.
+- If you're doing something like: input data source -> manually convert to a
+  `List<double>` -> pass to `FFT.realFft`, this is a bit inefficient. Instead
+  do: input data source -> manually convert to a `Float64x2List` -> pass to
+  `FFT.inPlaceFft`. This eliminates an array alocation and conversion.
+- Try to use power of two sized arrays. For example, if you're computing a
+  spectrogram, you can usually just round up the chunk size to the next power of
+  two. Or if you're filtering some audio, try padding your input with silence
+  until it's a power of two, and then trimming the silence afterwards.
+
 ## Technical Details
 
 Fast Fourier Transform isn't really a single algorithm. It's a family of
@@ -112,7 +130,7 @@ Check out the various implementations of FFT in lib/impl.dart for more details.
 ## Benchmarks
 
 This package was built because package:fft is not actively maintained anymore,
-isn't veey efficient, and only supports power of two FFTs. This package aims to
+isn't very efficient, and only supports power of two FFTs. This package aims to
 support FFTs of any size efficiently, and to make power of two FFTs particularly
 fast. There are a few improvements that make this Radix2FFT implementation
 efficient:
@@ -127,6 +145,7 @@ efficient:
 - Loop based FFT, rather than recursive.
 - Using trigonometric tricks to calculate fewer twiddle factors.
 - Bithacks
+- FFT implementations are cached by size.
 
 I found some other promising Dart FFT implementations, so I decided to benchmark
 them too: scidart, and smart_signal_processing. package:fft and

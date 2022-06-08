@@ -105,8 +105,8 @@ abstract class FFT {
 
   /// Real-valued FFT.
   ///
-  /// Performs an FFT on real-valued inputs. Returns the result as a
-  /// [Float64x2List], and doesn't modify the input array.
+  /// Performs an FFT on real-valued inputs. Returns the result as a newly
+  /// allocated [Float64x2List], and doesn't modify the input array.
   ///
   /// The complex numbers in the [Float64x2List] contain both the amplitude and
   /// phase information for each frequency. If you only care about the
@@ -142,7 +142,7 @@ abstract class FFT {
   /// Real-valued inverse FFT.
   ///
   /// Performs an inverse FFT and discards the imaginary components of the
-  /// result.
+  /// result. Returns a newly allocated [Float64List].
   ///
   /// This method expects the full result of [realFft], so don't use
   /// [ComplexArray.discardConjugates] if you need to call [realInverseFft].
