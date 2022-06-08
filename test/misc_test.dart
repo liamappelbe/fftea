@@ -14,23 +14,62 @@
 
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
+import 'package:fftea/impl.dart';
 import 'package:test/test.dart';
 
 void main() {
-  test('isPowerOf2', () {
-    expect(isPowerOf2(0), isFalse);
-    expect(isPowerOf2(1), isTrue);
-    expect(isPowerOf2(2), isTrue);
-    expect(isPowerOf2(3), isFalse);
-    expect(isPowerOf2(4), isTrue);
-    expect(isPowerOf2(5), isFalse);
-    expect(isPowerOf2(6), isFalse);
-    expect(isPowerOf2(7), isFalse);
-    expect(isPowerOf2(8), isTrue);
-    expect(isPowerOf2(47), isFalse);
-    expect(isPowerOf2(16384), isTrue);
-    expect(isPowerOf2(-123), isFalse);
-    expect(isPowerOf2(-4), isFalse);
+  test('FFT implementation selector', () {
+    expect(FFT(1).toString(), 'NaiveFFT(1)');
+    expect(FFT(2).toString(), 'Fixed2FFT()');
+    expect(FFT(3).toString(), 'Fixed3FFT()');
+    expect(FFT(4).toString(), 'NaiveFFT(4)');
+    expect(FFT(5).toString(), 'NaiveFFT(5)');
+    expect(FFT(6).toString(), 'NaiveFFT(6)');
+    expect(FFT(7).toString(), 'NaiveFFT(7)');
+    expect(FFT(8).toString(), 'NaiveFFT(8)');
+    expect(FFT(9).toString(), 'NaiveFFT(9)');
+    expect(FFT(10).toString(), 'NaiveFFT(10)');
+    expect(FFT(11).toString(), 'NaiveFFT(11)');
+    expect(FFT(12).toString(), 'NaiveFFT(12)');
+    expect(FFT(13).toString(), 'NaiveFFT(13)');
+    expect(FFT(14).toString(), 'NaiveFFT(14)');
+    expect(FFT(15).toString(), 'NaiveFFT(15)');
+    expect(FFT(16).toString(), 'Radix2FFT(16)');
+    expect(FFT(17).toString(), 'NaiveFFT(17)');
+    expect(FFT(18).toString(), 'NaiveFFT(18)');
+    expect(FFT(19).toString(), 'NaiveFFT(19)');
+    expect(FFT(20).toString(), 'NaiveFFT(20)');
+    expect(FFT(21).toString(), 'NaiveFFT(21)');
+    expect(FFT(22).toString(), 'NaiveFFT(22)');
+    expect(FFT(23).toString(), 'NaiveFFT(23)');
+    expect(FFT(24).toString(), 'CompositeFFT(24)');
+    expect(FFT(25).toString(), 'CompositeFFT(25)');
+    expect(FFT(25).toString(), 'CompositeFFT(25)');
+    expect(FFT(26).toString(), 'CompositeFFT(26)');
+    expect(FFT(27).toString(), 'CompositeFFT(27)');
+    expect(FFT(28).toString(), 'CompositeFFT(28)');
+    expect(FFT(29).toString(), 'PrimeFFT(29, true)');
+    expect(FFT(30).toString(), 'CompositeFFT(30)');
+    expect(FFT(31).toString(), 'PrimeFFT(31, true)');
+    expect(FFT(32).toString(), 'Radix2FFT(32)');
+    expect(FFT(33).toString(), 'CompositeFFT(33)');
+    expect(FFT(34).toString(), 'CompositeFFT(34)');
+    expect(FFT(35).toString(), 'CompositeFFT(35)');
+    expect(FFT(36).toString(), 'CompositeFFT(36)');
+    expect(FFT(37).toString(), 'PrimeFFT(37, false)');
+    expect(FFT(38).toString(), 'CompositeFFT(38)');
+    expect(FFT(39).toString(), 'CompositeFFT(39)');
+    expect(FFT(40).toString(), 'CompositeFFT(40)');
+    expect(FFT(41).toString(), 'PrimeFFT(41, false)');
+    expect(FFT(42).toString(), 'CompositeFFT(42)');
+    expect(FFT(43).toString(), 'PrimeFFT(43, true)');
+    expect(FFT(44).toString(), 'CompositeFFT(44)');
+    expect(FFT(45).toString(), 'CompositeFFT(45)');
+    expect(FFT(46).toString(), 'CompositeFFT(46)');
+    expect(FFT(47).toString(), 'PrimeFFT(47, true)');
+    expect(FFT(48).toString(), 'CompositeFFT(48)');
+    expect(FFT(49).toString(), 'CompositeFFT(49)');
+    expect(FFT(50).toString(), 'CompositeFFT(50)');
   });
 
   test('FFT.frequency', () {
@@ -51,56 +90,29 @@ void main() {
     expect(stft.frequency(32, 1024), 512);
   });
 
-  test('FFT not a power of two', () {
-    expect(() => FFT(16), returnsNormally);
-    expect(() => FFT(1), returnsNormally);
-    expect(
-      () => FFT(47),
-      throwsA(
-        predicate(
-          (e) =>
-              e is ArgumentError &&
-              e.message == 'FFT size must be a power of 2.',
-        ),
-      ),
-    );
+  test('FFT bad size', () {
     expect(
       () => FFT(0),
       throwsA(
         predicate(
           (e) =>
               e is ArgumentError &&
-              e.message == 'FFT size must be a power of 2.',
+              e.message == 'FFT size must be greater than 0.',
         ),
       ),
     );
     expect(
-      () => FFT(-8),
+      () => FFT(-123),
       throwsA(
         predicate(
           (e) =>
               e is ArgumentError &&
-              e.message == 'FFT size must be a power of 2.',
-        ),
-      ),
-    );
-  });
-
-  test('STFT not a power of two', () {
-    expect(() => STFT(16), returnsNormally);
-    expect(() => STFT(1), returnsNormally);
-    expect(
-      () => STFT(47),
-      throwsA(
-        predicate(
-          (e) =>
-              e is ArgumentError &&
-              e.message == 'FFT size must be a power of 2.',
+              e.message == 'FFT size must be greater than 0.',
         ),
       ),
     );
     expect(
-      () => STFT(0),
+      () => Radix2FFT(0),
       throwsA(
         predicate(
           (e) =>
@@ -110,7 +122,27 @@ void main() {
       ),
     );
     expect(
-      () => STFT(-8),
+      () => Radix2FFT(-123),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
+    expect(
+      () => Radix2FFT(3),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError &&
+              e.message == 'FFT size must be a power of 2.',
+        ),
+      ),
+    );
+    expect(
+      () => Radix2FFT(257),
       throwsA(
         predicate(
           (e) =>

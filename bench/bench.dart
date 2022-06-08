@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Benchmarks fftea vs a few other FFT packages.
+
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:fft/fft.dart' as fft;
@@ -148,13 +150,7 @@ void main() {
     'scidart, in-place* | fftea | fftea, cached | fftea, in-place, cached |',
   );
   print('| --- | --- | --- | --- | --- | --- | --- | --- | --- |');
-  bench(4);
-  bench(6);
-  bench(8);
-  bench(10);
-  bench(12);
-  bench(14);
-  bench(16);
-  bench(18);
-  bench(20);
+  for (int i = 4; i <= 20; i += 2) {
+    bench(i);
+  }
 }

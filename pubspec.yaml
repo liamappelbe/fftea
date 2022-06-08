@@ -13,10 +13,10 @@
 # limitations under the License.
 
 name: fftea
-version: 1.0.1
+version: 1.1.0
 description: >
-  A simple Fast Fourier Transform (FFT) library. Includes a very efficient FFT,
-  plus related tools for frequency analysis.
+  Fast Fourier Transform (FFT) library that can handle buffers of any size.
+  Includes related tools such as STFT and windowing.
 repository: https://github.com/liamappelbe/fftea
 
 environment:

@@ -1,3 +1,7 @@
+## 1.1.0
+
+- Add support for FFTs of any size, not just powers of two.
+
 ## 1.0.1
 
 - Use a bit hack for bit reversal. Speeds up FFT by about 25%

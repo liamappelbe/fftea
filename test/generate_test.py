@@ -18,10 +18,10 @@
 import numpy
 import math
 import random
+import struct
 import os
 
 kNumsPerLine = 4
-kOutFile = 'fftea_generated_test.dart';
 
 kPreamble = '''// Copyright 2022 The fftea authors
 //
@@ -40,12 +40,16 @@ kPreamble = '''// Copyright 2022 The fftea authors
 // GENERATED FILE. DO NOT EDIT.
 
 // Test cases generated with numpy as a reference implementation, using:
-//   python3 test/generate_test.py
+//   python3 test/generate_test.py && dart format .
 
-import 'dart:typed_data';
+// ignore_for_file: unused_import
+// ignore_for_file: require_trailing_commas
+
 import 'package:fftea/fftea.dart';
+import 'package:fftea/impl.dart';
 import 'package:test/test.dart';
-import 'util.dart';
+
+import 'test_util.dart';
 
 void main() {'''
 
@@ -78,110 +82,170 @@ def cplxBufStr(a):
     b.append(numpy.imag(z))
   return realBufStr(b)
 
-def generate(f):
+def writer(f):
   def write(s):
     f.write('%s\n' % s)
+  return write
+
+def writeMatrix(filename, m):
+  print('  Writing %s' % filename)
+  with open(filename, 'wb') as f:
+    f.write(b'MAT ')
+    f.write(len(m).to_bytes(4, 'little'))
+    for mm in m:
+      f.write(len(mm).to_bytes(4, 'little'))
+      for x in mm:
+        f.write(bytearray(struct.pack('d', x)))
+
+_data = set()
+def createDataset(filename, maker):
+  if filename not in _data:
+    _data.add(filename)
+    writeMatrix(filename, maker())
+
+def cplxToArray(c):
+  return [
+    [numpy.real(z) for z in c],
+    [numpy.imag(z) for z in c],
+  ]
+
+def generate(write, impl, sizes, extraCtorArg = ''):
   write(kPreamble)
 
-  def makeFftCase(n):
-    a = [randCplx(10) for i in range(n)]
-    f = numpy.fft.fft(a)
-    write('    testFft(')
-    write('      [%s],' % cplxBufStr(a))
-    write('      [%s],' % cplxBufStr(f))
-    write('    );')
+  def ctor(n):
+    if impl.startswith('Fixed'):
+      return '%s()' % impl
+    return '%s(%d%s)' % (impl, n, extraCtorArg)
 
-  write("  test('FFT', () {")
-  makeFftCase(1)
-  makeFftCase(2)
-  makeFftCase(4)
-  makeFftCase(8)
-  makeFftCase(16)
-  makeFftCase(32)
-  makeFftCase(64)
-  makeFftCase(128)
-  write('  });\n')
+  def makeFftCase(n):
+    matfile = 'test/data/fft_%d.mat' % n
+    def maker():
+      a = [randCplx(10) for i in range(n)]
+      f = cplxToArray(numpy.fft.fft(a))
+      b = cplxToArray(a)
+      return [b[0], b[1], f[0], f[1]]
+    createDataset(matfile, maker)
+    write("  test('%s %d', () async {" % (impl, n))
+    write("    await testFft('%s', %s);" % (matfile, ctor(n)))
+    write('  });\n')
+
+  for n in sizes:
+    makeFftCase(n)
 
   def makeRealFftCase(n):
-    a = [randReal(10) for i in range(n)]
-    f = numpy.fft.fft(a)
-    write('    testRealFft(')
-    write('      [%s],' % realBufStr(a))
-    write('      [%s],' % cplxBufStr(f))
-    write('    );')
+    matfile = 'test/data/real_fft_%d.mat' % n
+    def maker():
+      a = [randReal(10) for i in range(n)]
+      f = cplxToArray(numpy.fft.fft(a))
+      return [a, f[0], f[1]]
+    createDataset(matfile, maker)
+    write("  test('Real %s %d', () async {" % (impl, n))
+    write("    await testRealFft('%s', %s);" % (matfile, ctor(n)))
+    write('  });\n')
 
-  write("  test('Real FFT', () {")
-  makeRealFftCase(1)
-  makeRealFftCase(2)
-  makeRealFftCase(4)
-  makeRealFftCase(8)
-  makeRealFftCase(16)
-  makeRealFftCase(32)
-  makeRealFftCase(64)
-  makeRealFftCase(128)
-  write('  });\n')
-
-  def makeWindowCase(n, name, fn):
-    write('    expectClose(')
-    write('      Window.%s(%s),' % (name, n))
-    write('      [%s],' % realBufStr(fn(n)))
-    write('    );')
-
-  write("  test('Window', () {")
-  makeWindowCase(16, 'hamming', numpy.hamming)
-  makeWindowCase(16, 'hanning', numpy.hanning)
-  makeWindowCase(16, 'bartlett', numpy.bartlett)
-  makeWindowCase(16, 'blackman', numpy.blackman)
-  write('  });\n')
-
-  def makeWindowApplyCase(n):
-    a = [randReal(10) for i in range(n)]
-    b = numpy.hamming(n) * a
-    c = [randCplx(10) for i in range(n)]
-    d = numpy.hamming(n) * c
-    write('    final w = Window.hamming(16);')
-    write('    final a = [%s];' % realBufStr(a))
-    write('    expectClose(')
-    write('      w.applyWindowReal(Float64List.fromList(a)),')
-    write('      [%s],' % realBufStr(b))
-    write('    );');
-    write('    final b = [%s];' % cplxBufStr(c))
-    write('    expectClose(')
-    write('      toFloats(w.applyWindow(makeArray(b))),')
-    write('      [%s],' % cplxBufStr(d))
-    write('    );');
-
-  write("  test('Window apply', () {")
-  makeWindowApplyCase(16)
-  write('  });\n')
-
-  def makeStftCase(n, pn, nc, cs):
-    a = [randReal(10) if i < n else 0 for i in range(pn)]
-    w = numpy.hanning(nc)
-    b = []
-    i = 0
-    while (i + nc) <= len(a):
-      b.append(numpy.fft.fft(a[i:(i+nc)] * w))
-      i += cs
-    write('    testStft(')
-    write('      %s,' % nc)
-    write('      %s,' % cs)
-    write('      [%s],' % realBufStr(a[:n]))
-    write('      [')
-    for c in b:
-      write('      [%s],' % cplxBufStr(c))
-    write('      ],')
-    write('    );')
-
-  write("  test('STFT', () {")
-  makeStftCase(128, 128, 16, 8)
-  makeStftCase(47, 51, 16, 5)
-  write('  });')
+  for n in sizes:
+    makeRealFftCase(n)
 
   write('}\n')
 
-outFile = os.path.normpath(os.path.join(os.path.dirname(__file__), kOutFile))
-print('Writing %s' % outFile)
-with open(outFile, 'w') as f:
-  generate(f)
+def generateMisc(write):
+  write(kPreamble)
+
+  def makeWindowCase(n, name, fn):
+    matfile = 'test/data/window_%s_%d.mat' % (name, n)
+    def maker():
+      return [fn(n)]
+    createDataset(matfile, maker)
+    write("  test('Window %s %d', () async {" % (name, n))
+    write("    await testWindow('%s', Window.%s(%s));" % (matfile, name, n))
+    write('  });\n')
+
+  def makeWindowApplyRealCase(n, name, fn):
+    matfile = 'test/data/window_apply_real_%s_%d.mat' % (name, n)
+    def maker():
+      a = [randReal(10) for i in range(n)]
+      b = fn(n) * a
+      return [a, b]
+    createDataset(matfile, maker)
+    write("  test('Window apply real %s %d', () async {" % (name, n))
+    write("    await testWindowApplyReal('%s', Window.%s(%s));" % (
+        matfile, name, n))
+    write('  });\n')
+
+  def makeWindowApplyComplexCase(n, name, fn):
+    matfile = 'test/data/window_apply_complex_%s_%d.mat' % (name, n)
+    def maker():
+      a = [randReal(10) for i in range(n)]
+      b = cplxToArray(fn(n) * a)
+      a_ = cplxToArray(a)
+      return [a_[0], a_[1], b[0], b[1]]
+    createDataset(matfile, maker)
+    write("  test('Window apply complex %s %d', () async {" % (name, n))
+    write("    await testWindowApplyComplex('%s', Window.%s(%s));" % (
+        matfile, name, n))
+    write('  });\n')
+
+  for i in [1, 2, 3, 16, 47]:
+    makeWindowCase(i, 'hamming', numpy.hamming)
+    makeWindowCase(i, 'hanning', numpy.hanning)
+    makeWindowCase(i, 'bartlett', numpy.bartlett)
+    makeWindowCase(i, 'blackman', numpy.blackman)
+    makeWindowApplyRealCase(i, 'hamming', numpy.hamming)
+    makeWindowApplyComplexCase(i, 'hamming', numpy.hamming)
+
+  def makeStftCase(n, chunkSize, chunkStride, windowName = None, windowFn = None):
+    padn = math.ceil((n - chunkSize) / chunkStride) * chunkStride + chunkSize
+    hasWin = windowName is not None
+    wn = windowName if hasWin else 'null'
+    matfile = 'test/data/stft_%s_%d_%d_%d.mat' % (
+        wn, n, chunkSize, chunkStride)
+    def maker():
+      a = [randReal(10) if i < n else 0 for i in range(padn)]
+      w = windowFn(chunkSize) if hasWin else None
+      b = [a[:n]]
+      i = 0
+      while (i + chunkSize) <= len(a):
+        z = a[i:(i+chunkSize)]
+        if hasWin:
+          z = z * w
+        f = cplxToArray(numpy.fft.fft(z))
+        b.append(f[0])
+        b.append(f[1])
+        i += chunkStride
+      return b
+    createDataset(matfile, maker)
+    winCtor = ', Window.%s(%s)' % (windowName, chunkSize) if hasWin else ''
+    write("  test('STFT %s %d %d %d', () async {" % (wn, n, chunkSize, chunkStride))
+    write("    await testStft('%s', STFT(%d%s), %d);" % (matfile, chunkSize, winCtor, chunkStride))
+    write('  });\n')
+
+  for n in [47, 128, 1234]:
+    for chunkSize in [16, 23]:
+      for chunkStride in [5, chunkSize]:
+        makeStftCase(n, chunkSize, chunkStride)
+        makeStftCase(n, chunkSize, chunkStride, 'hamming', numpy.hamming)
+
+  write('}\n')
+
+def run(gen, filename, *args):
+  outFile = os.path.normpath(os.path.join(os.path.dirname(__file__), filename))
+  print('Writing %s' % outFile)
+  with open(outFile, 'w') as f:
+    gen(writer(f), *args)
+
+run(generate, 'fixed2_fft_generated_test.dart', 'Fixed2FFT', [2])
+run(generate, 'fixed3_fft_generated_test.dart', 'Fixed3FFT', [3])
+run(generate, 'radix2_fft_generated_test.dart', 'Radix2FFT',
+    [2 ** i for i in range(11)])
+run(generate, 'naive_fft_generated_test.dart', 'NaiveFFT',
+    [i + 1 for i in range(16)])
+run(generate, 'prime_padded_fft_generated_test.dart', 'PrimeFFT',
+    [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 1009, 7919, 28657], ', true')
+run(generate, 'prime_unpadded_fft_generated_test.dart', 'PrimeFFT',
+    [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 1009, 7919, 28657], ', false')
+run(generate, 'composite_fft_generated_test.dart', 'CompositeFFT',
+    [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
+run(generate, 'fft_generated_test.dart', 'FFT',
+    [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
+run(generateMisc, 'misc_generated_test.dart')
 print('Done :)')
