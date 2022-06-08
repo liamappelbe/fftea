@@ -116,7 +116,7 @@ void main() {
 
   test('Prime padding heuristic', () {
     final unpadded = {
-        2, 3, 5, 7, 11, 13, 17, 37, 41, 73, 97, 109, 151, 163, 181, 193, 257};
+        2, 3, 5, 7, 11, 13, 17, 19, 37, 41, 73, 97, 109, 151, 163, 181, 193, 257};
     for (int i = 0;; ++i) {
       final p = primes.getPrime(i);
       if (p > 257) break;

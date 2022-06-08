@@ -4,15 +4,15 @@
 [![Build Status](https://github.com/liamappelbe/fftea/workflows/CI/badge.svg)](https://github.com/liamappelbe/fftea/actions?query=workflow%3ACI+branch%3Amain)
 [![Coverage Status](https://coveralls.io/repos/github/liamappelbe/fftea/badge.svg?branch=main)](https://coveralls.io/github/liamappelbe/fftea?branch=main)
 
-A simple and efficient Fast Fourier Transform (FFT) implementation.
+A simple and efficient Fast Fourier Transform (FFT) library.
 
 FFT converts a time domain signal to the frequency domain, and back again. This
 is useful for all sorts of applications:
 
 - Filtering or synthesizing audio
 - Compression algorithms such as JPEG and MP3
-- Computing a spectrogram (most AI applications that analyze audio use
-  spectrograms)
+- Computing a spectrogram (most AI applications that analyze audio actually do
+  visual analysis of the spectrogram)
 - Convolutions, such as reverb filters for audio, or blurring filters for images
 
 This library supports FFT of real or complex arrays of any size. It also
@@ -24,7 +24,8 @@ FFT.
 Running a basic real-valued FFT:
 
 ```dart
-// myData.length must be a power of two. Eg 2, 4, 8, 16, ...
+import 'package:fftea/fftea.dart';
+
 List<double> myData = ...;
 
 final fft = FFT(myData.length);
@@ -34,23 +35,20 @@ final freq = fft.realFft(myData);
 `freq` is a `Float64x2List` representing a list of complex numbers. See
 `ComplexArray` for helpful extension methods on `Float64x2List`.
 
-For efficiency, avoid recreating the `FFT` object each time. Instead, create one
-`FFT` object of whatever size you need, and reuse it.
-
 Running an STFT to calculate a spectrogram:
 
 ```dart
-// audio.length *doesn't* need to be a power of two. It can be any legnth.
+import 'package:fftea/fftea.dart';
+
 List<double> audio = ...;
 
-final chunkSize = 1024;  // Must be a power of two.
+final chunkSize = 1234;
 final stft = STFT(chunkSize, Window.hanning(chunkSize));
 
 final spectrogram = <Float64List>[];
 stft.run(audio, (Float64x2List freq) {
   spectrogram.add(freq.discardConjugates().magnitudes());
 });
-
 ```
 
 The result of a real valued FFT is about half redundant data, so
@@ -82,9 +80,10 @@ of the input array. These algorithms differ mainly by what kind of array sizes
 they can handle. For example, some FFT algorithms can only handle power of two
 sized arrays, while others can only handle prime number sized arrays.
 
-Many FFT libraries only support power of two arrays. The reason for this is that
+Most FFT libraries only support power of two arrays. The reason for this is that
 it's relatively easy to implement an efficient FFT algorithm for power of two
-sizes arrays, using the Cooley-Tukey algorithm.
+sizes arrays, using the Cooley-Tukey algorithm. To handle all array sizes, you
+need a patchwork of different implementations for different kinds of sizes.
 
 In general, Cooley-Tukey algorithm actually works for any non-prime array size,
 by breaking it down into its prime factors. Powers of two just happen to be
@@ -96,6 +95,17 @@ factors, or a naive O(n^2) implementation which is faster for small factors.
 
 There's also a special Radix2FFT implementation for power of two FFTs that is
 much faster than the other implementations.
+
+Rader's algorithm handles a prime numbered size, n, by transforming it into an
+FFT of size n - 1, which is non-prime, so can be handled by Cooley-Tukey.
+Alternatively, the n - 1 FFT can be zero padded up to a power two, which is
+usually faster because the special Radix2FFT can be used. See the
+`primePaddingHeuristic` function.
+
+There are also a few special implementations for handling fixed sized FFTs of
+very small sizes. There's never really a practical use case for an FFT of size
+2 or 3, but these form the base cases of Cooley-Tukey, and make larger FFTs
+much faster.
 
 Check out the various implementations of FFT in lib/impl.dart for more details.
 
@@ -115,7 +125,7 @@ efficient:
   Float64x2 can also take advantage of SIMD optimisations.
 - The FFT algorithm is in-place, so no additional arrays are allocated.
 - Loop based FFT, rather than recursive.
-- Using trigonometric tricks to only calculate a quarter of the twiddle factors.
+- Using trigonometric tricks to calculate fewer twiddle factors.
 - Bithacks
 
 I found some other promising Dart FFT implementations, so I decided to benchmark
@@ -141,15 +151,15 @@ is not included in the benchmark. Run in Ubuntu on a Dell XPS 13.
 
 | Size | package:fft | smart | smart, in-place | scidart | scidart, in-place* | fftea | fftea, cached | fftea, in-place, cached |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 16 | 998.1 us | 82.8 us | 33.2 us | 866.8 us | 421.9 us | 205.6 us | 108.9 us | 117.0 us |
-| 64 | 749.3 us | 8.0 us | 4.8 us | 345.2 us | 267.7 us | 154.0 us | 129.7 us | 122.5 us |
-| 256 | 718.1 us | 20.2 us | 18.6 us | 1.37 ms | 1.35 ms | 162.1 us | 116.7 us | 113.6 us |
-| 2^10 | 2.57 ms | 74.7 us | 70.0 us | 14.73 ms | 14.73 ms | 59.9 us | 45.5 us | 41.4 us |
-| 2^12 | 12.37 ms | 308.7 us | 298.4 us | 196.49 ms | 185.56 ms | 214.3 us | 189.6 us | 173.8 us |
-| 2^14 | 60.13 ms | 1.30 ms | 1.25 ms | 2.97 s | 2.76 s | 1.04 ms | 853.4 us | 707.9 us |
-| 2^16 | 343.80 ms | 8.33 ms | 7.47 ms | 60.12 s | 59.22 s | 5.18 ms | 9.29 ms | 3.46 ms |
-| 2^18 | 1.96 s | 56.16 ms | 47.19 ms | Skipped | Skipped | 32.35 ms | 22.66 ms | 16.57 ms |
-| 2^20 | 10.89 s | 246.60 ms | 234.52 ms | Skipped | Skipped | 166.65 ms | 132.99 ms | 124.25 ms |
+| 16 | 424.4 us | 33.5 us | 23.3 us | 359.8 us | 133.6 us | 71.0 us | 48.2 us | 38.7 us |
+| 64 | 657.7 us | 7.6 us | 2.9 us | 310.2 us | 271.8 us | 136.8 us | 134.6 us | 103.5 us |
+| 256 | 614.1 us | 15.5 us | 11.1 us | 984.9 us | 1.02 ms | 100.3 us | 51.9 us | 38.3 us |
+| 2^10 | 1.74 ms | 50.0 us | 46.2 us | 9.14 ms | 9.17 ms | 39.5 us | 25.7 us | 23.5 us |
+| 2^12 | 8.01 ms | 219.7 us | 203.1 us | 133.10 ms | 138.19 ms | 119.8 us | 109.9 us | 104.8 us |
+| 2^14 | 39.69 ms | 903.5 us | 860.3 us | 2.15 s | 2.03 s | 677.9 us | 536.0 us | 436.2 us |
+| 2^16 | 225.97 ms | 5.36 ms | 4.76 ms | 42.53 s | 42.71 s | 3.43 ms | 3.14 ms | 2.21 ms |
+| 2^18 | 1.21 s | 27.89 ms | 25.84 ms | Skipped | Skipped | 12.95 ms | 12.53 ms | 10.99 ms |
+| 2^20 | 7.25 s | 164.35 ms | 149.33 ms | Skipped | Skipped | 89.84 ms | 85.69 ms | 74.99 ms |
 
 In practice, you usually know how big your FFT is ahead of time, so it's pretty
 easy to construct your FFT object once, to take advantage of the caching. It's
@@ -159,7 +169,7 @@ construct the flat complex array yourself. Since this isn't always possible,
 the "fftea, cached" times are probably the most representative. In that case,
 fftea is about 60-80x faster than package:fft, and about 70% faster than
 smart_signal_processing. Not sure what's going on with scidart, but it seems to
-be O(n^2).
+be O(n^2) even for power of two sizes.
 
 \* Scidart's FFT doesn't have an in-place mode, but they do use a custom format,
 so in-place means that the time to convert to that format is not included in the
@@ -168,8 +178,20 @@ benchmark.
 I also benchmarked fftea's various implementations of FFT at different sizes,
 using bench/impl_bench.dart.
 
+![Performance of different fftea implementations](/bench/impl_bench_1.png)
+
 This graph shows how the different implementations perform at different sizes.
 
-This graph shows how the performance of the implementation selected by the
-`FFT.FFT` constructor, which attempts to automatically pick the right
-implementation for the given size.
+![Performance of FFT.FFT constructor](/bench/impl_bench_2.png)
+
+This graph shows the performance of the implementation selected by the `FFT.FFT`
+constructor, which attempts to automatically pick the right implementation for
+the given size. Although the overall O(n\*log(n)) worst case slope is
+maintained, there is a lot of variation between specific sizes.
+
+Looking at the first graph, you can see that Radix2FFT is consistently the
+fastest, the PrimeFFT variants are the slowest, and CompositeFFT is in between.
+Generally, the more composite the size is, the faster the FFT will be. So if you
+have some flexibility in the FFT size you can choose, try to choose a highly
+composite size (ie, one where the prime factors are small), or ideally choose a
+power of two.

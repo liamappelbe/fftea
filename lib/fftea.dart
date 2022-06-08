@@ -13,7 +13,6 @@
 // limitations under the License.
 
 // TODO: Migrate remaining large array tests to use matrix files
-// TODO: Update README
 // TODO: Include impl benchmarks in README
 
 export 'impl.dart' show FFT;

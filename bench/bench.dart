@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Benchmarks Radix2FFT vs a few other FFT implementations.
+// Benchmarks fftea vs a few other FFT packages.
 
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:fft/fft.dart' as fft;
 import 'package:fftea/fftea.dart' as fftea;
-import 'package:fftea/impl.dart' as fftea_impl;
 import 'package:scidart/numdart.dart' as numdart;
 import 'package:scidart/scidart.dart' as scidart;
 import 'package:smart_signal_processing/src/fft.dart' as smart;
@@ -56,7 +55,7 @@ void bench(int sizeLog2) {
     inp[i] = 2 * rand.nextDouble() - 1;
   }
 
-  final ffteaFFTCached = fftea_impl.Radix2FFT(size);
+  final ffteaFFTCached = fftea.FFT(size);
   final fftTimer = TestTimer();
   final smartTimer = TestTimer();
   final smartInPlaceTimer = TestTimer();
@@ -117,7 +116,7 @@ void bench(int sizeLog2) {
     // fftea
     {
       ffteaTimer.start();
-      fftea_impl.Radix2FFT(size).realFft(inp);
+      fftea.FFT(size).realFft(inp);
       ffteaTimer.stop();
     }
 

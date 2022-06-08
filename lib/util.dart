@@ -207,7 +207,7 @@ int largestPrimeFactor(int n) {
 /// `n - 1` is greater than 5. We also special case a few small sizes where this
 /// simple heuristic is wrong.
 bool primePaddingHeuristic(int n) {
-  if (n == 19 || n == 31 || n == 61 || n == 101 || n == 241 || n == 251) {
+  if (n == 31 || n == 61 || n == 101 || n == 241 || n == 251) {
     return true;
   }
   int maxp = 1;

@@ -17,6 +17,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart' as fftea;
+import 'package:fftea/impl.dart' as fftea_impl;
 import 'package:fftea/util.dart' as util;
 
 class TestTimer {
@@ -48,13 +49,13 @@ void implBench(int size) {
     inp[i] = Float64x2(2 * rand.nextDouble() - 1, 2 * rand.nextDouble() - 1);
   }
 
-  final naiveFFT = size <= 300 ? fftea.NaiveFFT(size) : null;
+  final naiveFFT = size <= 300 ? fftea_impl.NaiveFFT(size) : null;
   final primePaddedFFT =
-      util.isPrime(size) && size > 2 ? fftea.PrimeFFT(size, true) : null;
+      util.isPrime(size) && size > 2 ? fftea_impl.PrimeFFT(size, true) : null;
   final primeUnpaddedFFT =
-      util.isPrime(size) && size > 2 ? fftea.PrimeFFT(size, false) : null;
-  final compositeFFT = fftea.CompositeFFT(size);
-  final radix2FFT = util.isPowerOf2(size) ? fftea.Radix2FFT(size) : null;
+      util.isPrime(size) && size > 2 ? fftea_impl.PrimeFFT(size, false) : null;
+  final compositeFFT = fftea_impl.CompositeFFT(size);
+  final radix2FFT = util.isPowerOf2(size) ? fftea_impl.Radix2FFT(size) : null;
   final fft = fftea.FFT(size);
   final naiveTimer = TestTimer();
   final primePaddedTimer = TestTimer();

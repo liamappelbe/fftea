@@ -132,8 +132,6 @@ extension Window on Float64List {
 ///
 /// STFT breaks up the input into overlapping chunks, applies an optional
 /// window, and runs an FFT. This is also known as a spectrogram.
-///
-/// The chunk size must be a power of two, eg 1, 2, 4, 8, 16 etc.
 class STFT {
   final FFT _fft;
   final Float64List? _win;
@@ -141,12 +139,10 @@ class STFT {
 
   /// Constructs an STFT object of the given size, with an optional windowing
   /// function.
-  ///
-  /// The chunk size must be a power of two, eg 1, 2, 4, 8, 16 etc.
-  STFT(int powerOf2ChunkSize, [this._win])
-      : _fft = FFT(powerOf2ChunkSize),
-        _chunk = Float64x2List(powerOf2ChunkSize) {
-    if (_win != null && _win!.length != powerOf2ChunkSize) {
+  STFT(int chunkSize, [this._win])
+      : _fft = FFT(chunkSize),
+        _chunk = Float64x2List(chunkSize) {
+    if (_win != null && _win!.length != chunkSize) {
       throw ArgumentError(
         'Window must have the same length as the chunk size.',
         '_win',

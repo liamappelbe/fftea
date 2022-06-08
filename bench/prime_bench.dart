@@ -18,6 +18,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart' as fftea;
+import 'package:fftea/impl.dart' as fftea_impl;
 import 'package:fftea/util.dart' as util;
 
 class TestTimer {
@@ -52,9 +53,9 @@ void implBench(int size) {
   }
 
   final primePaddedFFT =
-      util.isPrime(size) && size > 2 ? fftea.PrimeFFT(size, true) : null;
+      util.isPrime(size) && size > 2 ? fftea_impl.PrimeFFT(size, true) : null;
   final primeUnpaddedFFT =
-      util.isPrime(size) && size > 2 ? fftea.PrimeFFT(size, false) : null;
+      util.isPrime(size) && size > 2 ? fftea_impl.PrimeFFT(size, false) : null;
 
   int padWins = 0;
   int pad = 0;
