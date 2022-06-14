@@ -1,3 +1,8 @@
+## 1.1.1
+
+- Limit FFT size to 2^32, so that int literals can be small enough for JS
+  compatibility.
+
 ## 1.1.0
 
 - Add support for FFTs of any size, not just powers of two.

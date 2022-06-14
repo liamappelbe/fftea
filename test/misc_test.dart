@@ -116,8 +116,7 @@ void main() {
       throwsA(
         predicate(
           (e) =>
-              e is ArgumentError &&
-              e.message == 'FFT size is limited to 2^32.',
+              e is ArgumentError && e.message == 'FFT size is limited to 2^32.',
         ),
       ),
     );
