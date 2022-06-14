@@ -214,13 +214,15 @@ bool primePaddingHeuristic(int n) {
 }
 
 /// Returns the highest set bit of [x], where [x] is a power of 2.
+///
+/// Only supports [x] below 2^48, for compatibility with JS.
 int highestBit(int x) {
-  return ((x & 0xAAAAAAAAAAAAAAAA) != 0 ? 1 : 0) |
-      ((x & 0xCCCCCCCCCCCCCCCC) != 0 ? 2 : 0) |
-      ((x & 0xF0F0F0F0F0F0F0F0) != 0 ? 4 : 0) |
-      ((x & 0xFF00FF00FF00FF00) != 0 ? 8 : 0) |
-      ((x & 0xFFFF0000FFFF0000) != 0 ? 16 : 0) |
-      ((x & 0xFFFFFFFF00000000) != 0 ? 32 : 0);
+  return ((x & 0xAAAAAAAAAAAA) != 0 ? 1 : 0) |
+      ((x & 0xCCCCCCCCCCCC) != 0 ? 2 : 0) |
+      ((x & 0xF0F0F0F0F0F0) != 0 ? 4 : 0) |
+      ((x & 0xFF00FF00FF00) != 0 ? 8 : 0) |
+      ((x & 0x0000FFFF0000) != 0 ? 16 : 0) |
+      ((x & 0xFFFF00000000) != 0 ? 32 : 0);
 }
 
 /// Returns the smallest power of two equal or greater than [x].

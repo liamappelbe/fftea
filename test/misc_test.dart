@@ -112,6 +112,15 @@ void main() {
       ),
     );
     expect(
+      () => FFT(0x100000001),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError && e.message == 'FFT size is limited to 2^32.',
+        ),
+      ),
+    );
+    expect(
       () => Radix2FFT(0),
       throwsA(
         predicate(

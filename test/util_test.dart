@@ -129,7 +129,7 @@ void main() {
   });
 
   test('highestBit', () {
-    for (int i = 0; i < 64; ++i) {
+    for (int i = 0; i < 48; ++i) {
       expect(highestBit(1 << i), i);
     }
   });

@@ -42,6 +42,9 @@ abstract class FFT {
     if (size <= 0) {
       throw ArgumentError('FFT size must be greater than 0.', 'size');
     }
+    if (size > 0x100000000) {
+      throw ArgumentError('FFT size is limited to 2^32.', 'size');
+    }
     if (size == 2) {
       return Fixed2FFT();
     }
@@ -226,16 +229,15 @@ class Radix2FFT extends FFT {
     // Bit reverse permutation.
     final n = _size;
     final n2 = n >>> 1;
-    final shift = 64 - _bits;
+    final shift = 32 - _bits;
     for (int i = 0; i < n; ++i) {
       // Calculate bit reversal.
       int j = i;
-      j = ((j >>> 32) & 0x00000000FFFFFFFF) | (j << 32);
-      j = ((j >>> 16) & 0x0000FFFF0000FFFF) | ((j & 0x0000FFFF0000FFFF) << 16);
-      j = ((j >>> 8) & 0x00FF00FF00FF00FF) | ((j & 0x00FF00FF00FF00FF) << 8);
-      j = ((j >>> 4) & 0x0F0F0F0F0F0F0F0F) | ((j & 0x0F0F0F0F0F0F0F0F) << 4);
-      j = ((j >>> 2) & 0x3333333333333333) | ((j & 0x3333333333333333) << 2);
-      j = ((j >>> 1) & 0x5555555555555555) | ((j & 0x5555555555555555) << 1);
+      j = ((j >>> 16) & 0x0000FFFF) | ((j & 0x0000FFFF) << 16);
+      j = ((j >>> 8) & 0x00FF00FF) | ((j & 0x00FF00FF) << 8);
+      j = ((j >>> 4) & 0x0F0F0F0F) | ((j & 0x0F0F0F0F) << 4);
+      j = ((j >>> 2) & 0x33333333) | ((j & 0x33333333) << 2);
+      j = ((j >>> 1) & 0x55555555) | ((j & 0x55555555) << 1);
       j >>>= shift;
       // Permute.
       if (j < i) {
