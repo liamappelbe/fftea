@@ -134,6 +134,17 @@ void main() {
     }
   });
 
+  test('trailingZeros', () {
+    for (int i = 0; i < 48; ++i) {
+      expect(trailingZeros(1 << i), i);
+      expect(trailingZeros(3 << i), i);
+      expect(trailingZeros(5 << i), i);
+      expect(trailingZeros(7 << i), i);
+      expect(trailingZeros(9 << i), i);
+      expect(trailingZeros(129 << i), i);
+    }
+  });
+
   test('nextPowerOf2', () {
     expect(nextPowerOf2(1), 1);
     expect(nextPowerOf2(2), 2);
@@ -182,6 +193,7 @@ void main() {
       [4, 6, 105, 1],
       [62, 1, 367, 62],
       [98, 3, 92, 32],
+      [431665002, 2349572900, 3037036544, 1381859328],
     ];
     for (final gkny in exp) {
       expect(expMod(gkny[0], gkny[1], gkny[2]), gkny[3]);
