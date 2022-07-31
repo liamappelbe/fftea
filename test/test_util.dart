@@ -97,6 +97,28 @@ Future<void> testStft(String filename, STFT stft, int chunkStride) async {
   }
 }
 
+Future<void> testCircConv(String filename, int? n) async {
+  final raw = await readMatFile(filename);
+  expect(raw.length, 3);
+  final result1 = n == null
+      ? circularConvolution(raw[0], raw[1])
+      : circularConvolution(raw[0], raw[1], n);
+  expectClose(result1, raw[2]);
+  final result2 = n == null
+      ? circularConvolution(raw[1], raw[0])
+      : circularConvolution(raw[1], raw[0], n);
+  expectClose(result2, raw[2]);
+}
+
+Future<void> testLinConv(String filename) async {
+  final raw = await readMatFile(filename);
+  expect(raw.length, 3);
+  final result1 = convolution(raw[0], raw[1]);
+  expectClose(result1, raw[2]);
+  final result2 = convolution(raw[1], raw[0]);
+  expectClose(result2, raw[2]);
+}
+
 Future<List<List<double>>> readMatFile(String filename) async {
   final bytes = await File(filename).readAsBytes();
   int p = 0;

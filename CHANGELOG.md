@@ -1,3 +1,9 @@
+## 1.2.0
+
+- Add linear and circular convolution functions.
+- Add option to ComplexArray.fromRealArray to truncate or zero pad the array.
+- Add a complex multiplication function to ComplexArray.
+
 ## 1.1.1
 
 - Limit FFT size to 2^32, so that int literals can be small enough for JS
