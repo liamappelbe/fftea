@@ -25,6 +25,9 @@ import 'util.dart' show ComplexArray;
 ///
 /// Returns the result as a newly allocated [Float64List], and doesn't modify
 /// the input arrays. Also allocates 2 [Float64x2List]s along the way.
+///
+/// If your input arrays are very different lengths, a naive convolution may be
+/// faster than this FFT based algorithm.
 Float64List circularConvolution(
   List<double> a,
   List<double> b, [
@@ -50,6 +53,9 @@ Float64List circularConvolution(
 ///
 /// Returns the result as a newly allocated [Float64List], and doesn't modify
 /// the input arrays. Also allocates 2 [Float64x2List]s along the way.
+///
+/// If your input arrays are very different lengths, a naive convolution may be
+/// faster than this FFT based algorithm.
 Float64List convolution(List<double> a, List<double> b) {
   final n = math.max(a.length, b.length);
   return Float64List.sublistView(circularConvolution(a, b, n << 1), 0, n);

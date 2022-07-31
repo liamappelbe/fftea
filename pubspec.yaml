@@ -13,10 +13,10 @@
 # limitations under the License.
 
 name: fftea
-version: 1.2.0
+version: 1.2.0+1
 description: >
   Fast Fourier Transform (FFT) library that can handle inputs of any size.
-  Includes related tools such as STFT and windowing.
+  Includes related tools such as STFT and convolution.
 repository: https://github.com/liamappelbe/fftea
 
 environment:
