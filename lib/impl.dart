@@ -173,20 +173,6 @@ abstract class FFT {
   double frequency(int index, double samplesPerSecond) {
     return index * samplesPerSecond / size;
   }
-
-  /// Returns the circular convolution of real arrays [a] and [b].
-  ///
-  /// [a] and [b] will be zero padded or truncated to match the size of this
-  /// [FFT]. Returns the result as a newly allocated [Float64List], and doesn't
-  /// modify the input arrays. Also allocates 2 [Float64x2List]s along the way.
-  Float64List circularConvolution(List<double> a, List<double> b) {
-    final aa = ComplexArray.fromRealArray(a, size);
-    final bb = ComplexArray.fromRealArray(b, size);
-    inPlaceFft(aa);
-    inPlaceFft(bb);
-    aa.complexMultiply(bb);
-    return realInverseFft(aa);
-  }
 }
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.

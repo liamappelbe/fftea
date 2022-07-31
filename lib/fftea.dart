@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+export 'conv.dart';
 export 'impl.dart' show FFT;
 export 'stft.dart';
 export 'util.dart' show ComplexArray;

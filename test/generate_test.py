@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # Generate all *_generated_test.dart files:
-#   python3 test/generate_test.py
+#   python3 test/generate_test.py && dart format .
 
 # Requires numpy.
 
@@ -233,24 +233,48 @@ def generateMisc(write):
 
 def circConv(a, b, n):
   # Numpy and scipy seem to offset the result. So just doing slow naive version.
+  if n is None:
+    n = max(len(a), len(b))
   aa = [a[i] if i < len(a) else 0 for i in range(n)]
   bb = [b[i] if i < len(b) else 0 for i in range(n)]
-  cc = [sum([aa[j] * bb[(i - j) % n] for j in range(n)]) for i in range(n)]
-  return cc
+  return [sum([aa[j] * bb[(i - j) % n] for j in range(n)]) for i in range(n)]
 
-def generateConv(write, sizes):
+def linConv(a, b):
+  # Numpy and scipy seem to offset the result. So just doing slow naive version.
+  n = max(len(a), len(b))
+  aa = [a[i] if i < len(a) else 0 for i in range(n)]
+  bb = [b[i] if i < len(b) else 0 for i in range(n)]
+  return [sum([aa[j] * (0 if j > i else bb[i - j])
+      for j in range(n)]) for i in range(n)]
+
+def generateConv(write, circSizes, linSizes):
   write(kPreamble)
-  for an, bn, cn in sizes:
-    matfile = 'test/data/conv_%d_%d_%d.mat' % (an, bn, cn)
+
+  for an, bn, cn in circSizes:
+    cnn = 'null' if cn is None else str(cn)
+    matfile = 'test/data/circ_conv_%d_%d_%s.mat' % (an, bn, cnn)
     def maker():
       a = [randReal(10) for i in range(an)]
       b = [randReal(10) for i in range(bn)]
-      c = circConv(a, b,cn)
+      c = circConv(a, b, cn)
       return [a, b, c]
     createDataset(matfile, maker)
-    write("  test('Convolve %d %d', () async {" % (an, bn))
-    write("    await testConv('%s', %d);" % (matfile, cn))
+    write("  test('Circular convolution %d %d %s', () async {" % (an, bn, cnn))
+    write("    await testCircConv('%s', %s);" % (matfile, cnn))
     write('  });\n')
+
+  for an, bn in linSizes:
+    matfile = 'test/data/lin_conv_%d_%d.mat' % (an, bn)
+    def maker():
+      a = [randReal(10) for i in range(an)]
+      b = [randReal(10) for i in range(bn)]
+      c = linConv(a, b)
+      return [a, b, c]
+    createDataset(matfile, maker)
+    write("  test('Linear convolution %d %d', () async {" % (an, bn))
+    write("    await testLinConv('%s');" % (matfile))
+    write('  });\n')
+
   write('}\n')
 
 def run(gen, testName, *args):
@@ -274,6 +298,8 @@ run(generate, 'fft', 'FFT',
     [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
 run(generateConv, 'convolution',
     [(1, 1, 1), (5, 47, 47), (91, 12, 91), (127, 129, 128), (337, 321, 330),
-    (1024, 1024, 1024), (2000, 3000, 1400)])
+    (1024, 1024, 1024), (2000, 3000, 1400), (123, 456, None), (456, 789, None),
+    (1234, 1234, None)],
+    [(1, 1), (4, 4), (5, 47), (91, 12), (127, 129), (337, 321), (1024, 1024)])
 run(generateMisc, 'misc')
 print('Done :)')

@@ -27,31 +27,71 @@ import 'package:test/test.dart';
 import 'test_util.dart';
 
 void main() {
-  test('Convolve 1 1', () async {
-    await testConv('test/data/conv_1_1_1.mat', 1);
+  test('Circular convolution 1 1 1', () async {
+    await testCircConv('test/data/circ_conv_1_1_1.mat', 1);
   });
 
-  test('Convolve 5 47', () async {
-    await testConv('test/data/conv_5_47_47.mat', 47);
+  test('Circular convolution 5 47 47', () async {
+    await testCircConv('test/data/circ_conv_5_47_47.mat', 47);
   });
 
-  test('Convolve 91 12', () async {
-    await testConv('test/data/conv_91_12_91.mat', 91);
+  test('Circular convolution 91 12 91', () async {
+    await testCircConv('test/data/circ_conv_91_12_91.mat', 91);
   });
 
-  test('Convolve 127 129', () async {
-    await testConv('test/data/conv_127_129_128.mat', 128);
+  test('Circular convolution 127 129 128', () async {
+    await testCircConv('test/data/circ_conv_127_129_128.mat', 128);
   });
 
-  test('Convolve 337 321', () async {
-    await testConv('test/data/conv_337_321_330.mat', 330);
+  test('Circular convolution 337 321 330', () async {
+    await testCircConv('test/data/circ_conv_337_321_330.mat', 330);
   });
 
-  test('Convolve 1024 1024', () async {
-    await testConv('test/data/conv_1024_1024_1024.mat', 1024);
+  test('Circular convolution 1024 1024 1024', () async {
+    await testCircConv('test/data/circ_conv_1024_1024_1024.mat', 1024);
   });
 
-  test('Convolve 2000 3000', () async {
-    await testConv('test/data/conv_2000_3000_1400.mat', 1400);
+  test('Circular convolution 2000 3000 1400', () async {
+    await testCircConv('test/data/circ_conv_2000_3000_1400.mat', 1400);
+  });
+
+  test('Circular convolution 123 456 null', () async {
+    await testCircConv('test/data/circ_conv_123_456_null.mat', null);
+  });
+
+  test('Circular convolution 456 789 null', () async {
+    await testCircConv('test/data/circ_conv_456_789_null.mat', null);
+  });
+
+  test('Circular convolution 1234 1234 null', () async {
+    await testCircConv('test/data/circ_conv_1234_1234_null.mat', null);
+  });
+
+  test('Linear convolution 1 1', () async {
+    await testLinConv('test/data/lin_conv_1_1.mat');
+  });
+
+  test('Linear convolution 4 4', () async {
+    await testLinConv('test/data/lin_conv_4_4.mat');
+  });
+
+  test('Linear convolution 5 47', () async {
+    await testLinConv('test/data/lin_conv_5_47.mat');
+  });
+
+  test('Linear convolution 91 12', () async {
+    await testLinConv('test/data/lin_conv_91_12.mat');
+  });
+
+  test('Linear convolution 127 129', () async {
+    await testLinConv('test/data/lin_conv_127_129.mat');
+  });
+
+  test('Linear convolution 337 321', () async {
+    await testLinConv('test/data/lin_conv_337_321.mat');
+  });
+
+  test('Linear convolution 1024 1024', () async {
+    await testLinConv('test/data/lin_conv_1024_1024.mat');
   });
 }
