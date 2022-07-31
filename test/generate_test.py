@@ -12,14 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Generate fftea_generated_test.dart:
+# Generate all *_generated_test.dart files:
 #   python3 test/generate_test.py
+
+# Requires numpy.
 
 import numpy
 import math
 import random
 import struct
 import os
+
+random.seed(2365817263)
 
 kNumsPerLine = 4
 
@@ -227,25 +231,49 @@ def generateMisc(write):
 
   write('}\n')
 
-def run(gen, filename, *args):
-  outFile = os.path.normpath(os.path.join(os.path.dirname(__file__), filename))
+def circConv(a, b, n):
+  # Numpy and scipy seem to offset the result. So just doing slow naive version.
+  aa = [a[i] if i < len(a) else 0 for i in range(n)]
+  bb = [b[i] if i < len(b) else 0 for i in range(n)]
+  cc = [sum([aa[j] * bb[(i - j) % n] for j in range(n)]) for i in range(n)]
+  return cc
+
+def generateConv(write, sizes):
+  write(kPreamble)
+  for an, bn, cn in sizes:
+    matfile = 'test/data/conv_%d_%d_%d.mat' % (an, bn, cn)
+    def maker():
+      a = [randReal(10) for i in range(an)]
+      b = [randReal(10) for i in range(bn)]
+      c = circConv(a, b,cn)
+      return [a, b, c]
+    createDataset(matfile, maker)
+    write("  test('Convolve %d %d', () async {" % (an, bn))
+    write("    await testConv('%s', %d);" % (matfile, cn))
+    write('  });\n')
+  write('}\n')
+
+def run(gen, testName, *args):
+  outFile = os.path.normpath(os.path.join(
+      os.path.dirname(__file__), testName + '_generated_test.dart'))
   print('Writing %s' % outFile)
   with open(outFile, 'w') as f:
     gen(writer(f), *args)
 
-run(generate, 'fixed2_fft_generated_test.dart', 'Fixed2FFT', [2])
-run(generate, 'fixed3_fft_generated_test.dart', 'Fixed3FFT', [3])
-run(generate, 'radix2_fft_generated_test.dart', 'Radix2FFT',
-    [2 ** i for i in range(11)])
-run(generate, 'naive_fft_generated_test.dart', 'NaiveFFT',
-    [i + 1 for i in range(16)])
-run(generate, 'prime_padded_fft_generated_test.dart', 'PrimeFFT',
+run(generate, 'fixed2_fft', 'Fixed2FFT', [2])
+run(generate, 'fixed3_fft', 'Fixed3FFT', [3])
+run(generate, 'radix2_fft', 'Radix2FFT', [2 ** i for i in range(11)])
+run(generate, 'naive_fft', 'NaiveFFT', [i + 1 for i in range(16)])
+run(generate, 'prime_padded_fft', 'PrimeFFT',
     [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 1009, 7919, 28657], ', true')
-run(generate, 'prime_unpadded_fft_generated_test.dart', 'PrimeFFT',
+run(generate, 'prime_unpadded_fft', 'PrimeFFT',
     [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 1009, 7919, 28657], ', false')
-run(generate, 'composite_fft_generated_test.dart', 'CompositeFFT',
+run(generate, 'composite_fft', 'CompositeFFT',
     [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
-run(generate, 'fft_generated_test.dart', 'FFT',
+run(generate, 'fft', 'FFT',
     [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
-run(generateMisc, 'misc_generated_test.dart')
+run(generateConv, 'convolution',
+    [(1, 1, 1), (5, 47, 47), (91, 12, 91), (127, 129, 128), (337, 321, 330),
+    (1024, 1024, 1024), (2000, 3000, 1400)])
+run(generateMisc, 'misc')
 print('Done :)')

@@ -19,9 +19,14 @@ import 'dart:typed_data';
 /// numbers.
 extension ComplexArray on Float64x2List {
   /// Converts a real array to a [Float64x2List] of complex numbers.
-  static Float64x2List fromRealArray(List<double> reals) {
-    final a = Float64x2List(reals.length);
-    for (int i = 0; i < reals.length; ++i) {
+  static Float64x2List fromRealArray(
+    List<double> reals, [
+    int outputLength = -1,
+  ]) {
+    if (outputLength < 0) outputLength = reals.length;
+    final a = Float64x2List(outputLength);
+    final copyLength = math.min(reals.length, outputLength);
+    for (int i = 0; i < copyLength; ++i) {
       a[i] = Float64x2(reals[i], 0);
     }
     return a;
@@ -59,6 +64,21 @@ extension ComplexArray on Float64x2List {
       m[i] = math.sqrt(m[i]);
     }
     return m;
+  }
+
+  /// Complex multiplies each element of [other] onto each element of this list.
+  ///
+  /// This method modifies this array, rather than allocating a new array. The
+  /// other array must have the same length as this one.
+  void complexMultiply(Float64x2List other) {
+    if (other.length != length) {
+      throw ArgumentError('Input is the wrong length.', 'other');
+    }
+    for (int i = 0; i < length; ++i) {
+      final a = this[i];
+      final b = other[i];
+      this[i] = a.scale(b.x) + Float64x2(-a.y, a.x).scale(b.y);
+    }
   }
 
   /// Discards redundant conjugate terms, assuming this is the result of a real
