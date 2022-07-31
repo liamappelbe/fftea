@@ -16,8 +16,8 @@ is useful for all sorts of applications:
 - Convolutions, such as reverb filters for audio, or blurring filters for images
 
 This library supports FFT of real or complex arrays of any size. It also
-includes some related utilities, such as windowing functions, STFT, and inverse
-FFT.
+includes some related utilities, such as windowing functions, STFT, inverse FFT,
+and circular and linear convolution.
 
 ## Usage
 
