@@ -21,7 +21,7 @@ version: 1.0.0
 
 # We import some legacy libraries for benchmarking, so allow older SDKs.
 environment:
-  sdk: ">=2.7.0 <3.0.0"
+  sdk: ">=2.7.0 <4.0.0"
 
 dependencies:
   fft: ^0.3.0
