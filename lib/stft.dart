@@ -152,6 +152,17 @@ class STFT {
     return _fft.frequency(index, samplesPerSecond);
   }
 
+  /// Returns the index in the FFT output that corresponds to the given
+  /// frequency. This is the inverse of [frequency].
+  ///
+  /// [samplesPerSecond] is the sampling rate of the input signal in Hz. [freq]
+  /// is also in Hz. The result is a double because the target [freq] might not
+  /// exactly land on an FFT index. Decide whether to round, floor, or ceil the
+  /// result based on your use case.
+  double indexOfFrequency(double freq, double samplesPerSecond) {
+    return _fft.indexOfFrequency(freq, samplesPerSecond);
+  }
+
   /// Runs STFT on [input].
   ///
   /// The input is broken up into chunks, windowed, FFT'd, and then passed to

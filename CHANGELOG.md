@@ -1,3 +1,7 @@
+## 1.3.1
+
+- Added FFT.indexOfFrequency and STFT.indexOfFrequency.
+
 ## 1.3.0
 
 - Change version constraints to prep for Dart 3.

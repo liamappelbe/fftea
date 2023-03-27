@@ -173,6 +173,17 @@ abstract class FFT {
   double frequency(int index, double samplesPerSecond) {
     return index * samplesPerSecond / size;
   }
+
+  /// Returns the index in the FFT output that corresponds to the given
+  /// frequency. This is the inverse of [frequency].
+  ///
+  /// [samplesPerSecond] is the sampling rate of the input signal in Hz. [freq]
+  /// is also in Hz. The result is a double because the target [freq] might not
+  /// exactly land on an FFT index. Decide whether to round, floor, or ceil the
+  /// result based on your use case.
+  double indexOfFrequency(double freq, double samplesPerSecond) {
+    return freq * size / samplesPerSecond;
+  }
 }
 
 /// Performs FFTs (Fast Fourier Transforms) of a particular size.

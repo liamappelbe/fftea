@@ -81,6 +81,16 @@ void main() {
     expect(fft.frequency(2, 4), 0.5);
   });
 
+  test('FFT.indexOfFrequency', () {
+    final fft = FFT(16);
+    expect(fft.indexOfFrequency(0, 32), 0);
+    expect(fft.indexOfFrequency(2, 32), 1);
+    expect(fft.indexOfFrequency(4, 32), 2);
+    expect(fft.indexOfFrequency(16, 32), 8);
+    expect(fft.indexOfFrequency(0.5, 4), 2);
+    expect(fft.indexOfFrequency(0.375, 4), 1.5);
+  });
+
   test('STFT.frequency', () {
     final stft = STFT(64);
     expect(stft.frequency(0, 32), 0);
@@ -88,6 +98,16 @@ void main() {
     expect(stft.frequency(2, 32), 1);
     expect(stft.frequency(8, 32), 4);
     expect(stft.frequency(32, 1024), 512);
+  });
+
+  test('STFT.indexOfFrequency', () {
+    final stft = STFT(64);
+    expect(stft.indexOfFrequency(0, 32), 0);
+    expect(stft.indexOfFrequency(0.5, 32), 1);
+    expect(stft.indexOfFrequency(1, 32), 2);
+    expect(stft.indexOfFrequency(4, 32), 8);
+    expect(stft.indexOfFrequency(512, 1024), 32);
+    expect(stft.indexOfFrequency(6, 256), 1.5);
   });
 
   test('FFT bad size', () {
