@@ -81,6 +81,10 @@ extension ComplexArray on Float64x2List {
     }
   }
 
+  static int _discConjLen(int length) {
+    return (length == 0) ? 0 : ((length >>> 1) + 1);
+  }
+
   /// Discards redundant conjugate terms, assuming this is the result of a real
   /// valued FFT. This method does not check whether those terms are actualy
   /// redundant conjugate values.
@@ -96,7 +100,47 @@ extension ComplexArray on Float64x2List {
   /// This method returns a new array (which is a view into the same data). It
   /// does not modify this array, or make a copy of the data.
   Float64x2List discardConjugates() {
-    return Float64x2List.sublistView(this, 0, (length >>> 1) + 1);
+    return Float64x2List.sublistView(this, 0, _discConjLen(length));
+  }
+
+  /// Creates redundant conjugate terms. This is the inverse of
+  /// [discardConjugates], and it only really makes sense to recreate conjugates
+  /// after they have been discarded using that method.
+  ///
+  /// When discarding the conjugates, an array of e.g. 10 elements or 11
+  /// elements will both end up with 6 elements left. So when recreating them,
+  /// the [outputLength] needs to be specified. It should be the same as the
+  /// length of the array before [discardConjugates] was called.
+  ///
+  /// The intended use case for this function is as part of a signal processing
+  /// pipeline that takes a real valued time domain input, FFTs it, discards the
+  /// conjugates, performs some manipulations on the complex frequency domain
+  /// signal, recreates the conjugates, then does an inverse FFT to get a real
+  /// valueed time domain output. You could get the same output by simply not
+  /// discarding the conjugates, but care must be taken to ensure that the
+  /// frequency domain manipulations preserve the conjugate symmetry, which can
+  /// be fiddly. If the symmetry is lost, then the final time domain output may
+  /// be complex valued, not purely real. So it can be easier to discard the
+  /// conjugates and then recreate them later.
+  ///
+  /// This method returns a totally new array containing a copy of this array,
+  /// with the extra values appended at the end.
+  Float64x2List createConjugates(int outputLength) {
+    if (_discConjLen(outputLength) != length) {
+      throw ArgumentError(
+        'Output length must be either (2 * length - 2) or (2 * length - 1).',
+        'outputLength',
+      );
+    }
+    final out = Float64x2List(outputLength);
+    for (int i = 0; i < length; ++i) {
+      out[i] = this[i];
+    }
+    for (int i = length; i < outputLength; ++i) {
+      final a = this[outputLength - i];
+      out[i] = Float64x2(a.x, -a.y);
+    }
+    return out;
   }
 }
 
