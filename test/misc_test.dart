@@ -91,6 +91,14 @@ void main() {
     expect(fft.indexOfFrequency(0.375, 4), 1.5);
   });
 
+  test('FFT.indexOfFrequency inverts FFT.frequency', () {
+    final fft = FFT(16);
+    for (int i = 0; i < 100; ++i) {
+      final freq = fft.frequency(i, 12.3);
+      expect(fft.indexOfFrequency(freq, 12.3), closeTo(i, 1e-6));
+    }
+  });
+
   test('STFT.frequency', () {
     final stft = STFT(64);
     expect(stft.frequency(0, 32), 0);
@@ -108,6 +116,14 @@ void main() {
     expect(stft.indexOfFrequency(4, 32), 8);
     expect(stft.indexOfFrequency(512, 1024), 32);
     expect(stft.indexOfFrequency(6, 256), 1.5);
+  });
+
+  test('STFT.indexOfFrequency inverts STFT.frequency', () {
+    final fft = STFT(64);
+    for (int i = 0; i < 100; ++i) {
+      final freq = fft.frequency(i, 83945);
+      expect(fft.indexOfFrequency(freq, 83945), closeTo(i, 1e-6));
+    }
   });
 
   test('FFT bad size', () {

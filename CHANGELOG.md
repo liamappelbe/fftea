@@ -1,3 +1,7 @@
+## 1.4.0-dev
+
+- Added ComplexArray.createConjugates.
+
 ## 1.3.1
 
 - Added FFT.indexOfFrequency and STFT.indexOfFrequency.
