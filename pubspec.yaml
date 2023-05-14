@@ -30,4 +30,4 @@ analyzer:
   exclude:
     # Some of the libraries we benchmark haven't been ported to null safety,
     # so aren't compatible with dart 3 (and likely never will be).
-    - bencmark/**
+    - bench/**
