@@ -32,7 +32,3 @@ dependencies:
 
 dev_dependencies:
   lints: ^1.0.0
-
-analyzer:
-  exclude:
-    - ./**
