@@ -130,6 +130,8 @@ class STFT {
   final FFT _fft;
   final Float64List? _win;
   final Float64x2List _chunk;
+  Float64x2List? _scratch;
+  int _chunkIndex = 0;
 
   /// Constructs an STFT object of the given size, with an optional windowing
   /// function.
@@ -148,9 +150,8 @@ class STFT {
   ///
   /// [samplesPerSecond] is the sampling rate of the input signal in Hz. The
   /// result is also in Hz.
-  double frequency(int index, double samplesPerSecond) {
-    return _fft.frequency(index, samplesPerSecond);
-  }
+  double frequency(int index, double samplesPerSecond) =>
+      _fft.frequency(index, samplesPerSecond);
 
   /// Returns the index in the FFT output that corresponds to the given
   /// frequency. This is the inverse of [frequency].
@@ -159,9 +160,8 @@ class STFT {
   /// is also in Hz. The result is a double because the target [freq] might not
   /// exactly land on an FFT index. Decide whether to round, floor, or ceil the
   /// result based on your use case.
-  double indexOfFrequency(double freq, double samplesPerSecond) {
-    return _fft.indexOfFrequency(freq, samplesPerSecond);
-  }
+  double indexOfFrequency(double freq, double samplesPerSecond) =>
+      _fft.indexOfFrequency(freq, samplesPerSecond);
 
   /// Runs STFT on [input].
   ///
@@ -182,25 +182,61 @@ class STFT {
     List<double> input,
     Function(Float64x2List) reportChunk, [
     int chunkStride = 0,
-  ]) {
+  ]) =>
+      _run(input, reportChunk, chunkStride, false);
+
+  /// Runs STFT on [input]. This method is the same as [run], but instead of
+  /// zero padding the input to fill the final chunk, it holds on to the excess
+  /// data until the next time it is called.
+  void stream(
+    List<double> input,
+    Function(Float64x2List) reportChunk, [
+    int chunkStride = 0,
+  ]) =>
+      _run(input, reportChunk, chunkStride, true);
+
+  /// Runs STFT on any remaining input in the buffer. Use after a series of
+  /// calls to [stream] to zero pad and clear the buffer.
+  void flush(Function(Float64x2List) reportChunk) =>
+      _run([], reportChunk, 0, false);
+
+  void _run(
+    List<double> input,
+    Function(Float64x2List) reportChunk,
+    int chunkStride,
+    bool streamed,
+  ) {
+    // If there's no input, do nothing, unless we're trying to flush and there's
+    // data to be flushed.
+    if (input.length == 0 && (streamed || _chunkIndex == 0)) return;
+
     final chunkSize = _fft.size;
     if (chunkStride <= 0) chunkStride = chunkSize;
-    for (int i = 0;; i += chunkStride) {
-      final i2 = i + chunkSize;
+    final chunkOverlap = chunkSize - chunkStride;
+
+    // i indexes into input, _chunkIndex indexes into _chunk.
+    for (int i = 0;;) {
+      final i2 = i + chunkSize - _chunkIndex;
       if (i2 > input.length) {
         int j = 0;
         final stop = input.length - i;
         for (; j < stop; ++j) {
-          _chunk[j] = Float64x2(input[i + j], 0);
+          _chunk[_chunkIndex] = Float64x2(input[i + j], 0);
+          _chunkIndex = (_chunkIndex + 1) % chunkSize;
         }
+        if (streamed) return;
         for (; j < chunkSize; ++j) {
-          _chunk[j] = Float64x2.zero();
+          _chunk[_chunkIndex] = Float64x2.zero();
+          _chunkIndex = (_chunkIndex + 1) % chunkSize;
         }
       } else {
         for (int j = 0; j < chunkSize; ++j) {
-          _chunk[j] = Float64x2(input[i + j], 0);
+          _chunk[_chunkIndex] = Float64x2(input[i + j], 0);
+          _chunkIndex = (_chunkIndex + 1) % chunkSize;
         }
       }
+      i = i2 - chunkOverlap;
+      // TODO: Handle the case where i is now negative.
       _win?.inPlaceApplyWindow(_chunk);
       _fft.inPlaceFft(_chunk);
       reportChunk(_chunk);

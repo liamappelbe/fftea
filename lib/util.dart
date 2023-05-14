@@ -116,8 +116,8 @@ extension ComplexArray on Float64x2List {
   /// pipeline that takes a real valued time domain input, FFTs it, discards the
   /// conjugates, performs some manipulations on the complex frequency domain
   /// signal, recreates the conjugates, then does an inverse FFT to get a real
-  /// valueed time domain output. You could get the same output by simply not
-  /// discarding the conjugates, but care must be taken to ensure that the
+  /// valued time domain output. You could get the same output by simply not
+  /// discarding the conjugates, but then care must be taken to ensure that the
   /// frequency domain manipulations preserve the conjugate symmetry, which can
   /// be fiddly. If the symmetry is lost, then the final time domain output may
   /// be complex valued, not purely real. So it can be easier to discard the
