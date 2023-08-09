@@ -90,7 +90,11 @@ Future<void> testWindowApplyComplex(String filename, Float64List window) async {
 }
 
 Future<void> testStft(
-    String filename, STFT stft, int chunkStride, bool streamed) async {
+  String filename,
+  STFT stft,
+  int chunkStride,
+  bool streamed,
+) async {
   if (streamed) return;
   final raw = await readMatFile(filename);
   late List<Float64x2List> result;

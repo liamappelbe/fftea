@@ -41,8 +41,8 @@ class Verifier {
 
 void main() {
   test('STFT stream then run flushes existing data', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.stream([1, 2], v);
     v.verify([]);
     stft.run([3, 4], v);
@@ -53,8 +53,8 @@ void main() {
   });
 
   test('STFT stream then run no flush if no existing data', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.stream([1, 2, 3, 4], v);
     v.verify([
       [1, 2, 3, 4]
@@ -66,8 +66,8 @@ void main() {
   });
 
   test('STFT stream then run empty input empty output', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.stream([1, 2], v);
     v.verify([]);
     stft.run([], v);
@@ -78,13 +78,14 @@ void main() {
   });
 
   test('STFT stream does nothing if no input', () {
-    final v = Verifier();
     final stft = STFT(4);
-    stft.stream([], v);
-    stft.stream([], v);
-    stft.stream([], v);
-    stft.stream([], v);
-    stft.stream([], v);
+    final v = Verifier();
+    stft
+      ..stream([], v)
+      ..stream([], v)
+      ..stream([], v)
+      ..stream([], v)
+      ..stream([], v);
     v.verify([]);
     stft.run([], v);
     v.verify([
@@ -93,8 +94,8 @@ void main() {
   });
 
   test('STFT stream then flush flushes existing data', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.stream([1, 2], v);
     v.verify([]);
     stft.flush(v);
@@ -104,8 +105,8 @@ void main() {
   });
 
   test('STFT stream then flush does nothing if no existing data', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.stream([], v);
     v.verify([]);
     stft.flush(v);
@@ -113,113 +114,145 @@ void main() {
   });
 
   test('STFT run then flush does nothing', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.run([1, 2, 3], v);
-    v.verify([[1, 2, 3, 0]]);
+    v.verify([
+      [1, 2, 3, 0],
+    ]);
     stft.flush(v);
     v.verify([]);
   });
 
   test('STFT lone flush does nothing', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.flush(v);
     v.verify([]);
   });
 
   test('STFT second flush does nothing', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.stream([1, 2], v);
     v.verify([]);
     stft.stream([3], v);
     v.verify([]);
     stft.flush(v);
-    v.verify([[1, 2, 3, 0]]);
+    v.verify([
+      [1, 2, 3, 0],
+    ]);
     stft.flush(v);
     v.verify([]);
   });
 
   test('STFT stream flush run', () {
-    final v = Verifier();
     final stft = STFT(4);
-    stft.stream([1], v);
-    stft.stream([2], v);
+    final v = Verifier();
+    stft
+      ..stream([1], v)
+      ..stream([2], v);
     v.verify([]);
     stft.flush(v);
-    v.verify([[1, 2, 0, 0]]);
+    v.verify([
+      [1, 2, 0, 0],
+    ]);
     stft.run([3, 4], v);
-    v.verify([[3, 4, 0, 0]]);
+    v.verify([
+      [3, 4, 0, 0],
+    ]);
   });
 
   test('STFT stream run flush', () {
-    final v = Verifier();
     final stft = STFT(4);
-    stft.stream([1], v);
-    stft.stream([2], v);
+    final v = Verifier();
+    stft
+      ..stream([1], v)
+      ..stream([2], v);
     v.verify([]);
     stft.run([3, 4], v);
-    v.verify([[1, 2, 0, 0], [3, 4, 0, 0]]);
+    v.verify([
+      [1, 2, 0, 0],
+      [3, 4, 0, 0],
+    ]);
     stft.flush(v);
     v.verify([]);
   });
 
   test('STFT flush stream run', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.flush(v);
     v.verify([]);
-    stft.stream([1], v);
-    stft.stream([2], v);
+    stft
+      ..stream([1], v)
+      ..stream([2], v);
     v.verify([]);
     stft.run([3, 4], v);
-    v.verify([[1, 2, 0, 0], [3, 4, 0, 0]]);
+    v.verify([
+      [1, 2, 0, 0],
+      [3, 4, 0, 0],
+    ]);
   });
 
   test('STFT flush run stream', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.flush(v);
     v.verify([]);
     stft.run([3, 4], v);
-    v.verify([[3, 4, 0, 0]]);
-    stft.stream([1], v);
-    stft.stream([2], v);
+    v.verify([
+      [3, 4, 0, 0],
+    ]);
+    stft
+      ..stream([1], v)
+      ..stream([2], v);
     v.verify([]);
     stft.flush(v);
-    v.verify([[1, 2, 0, 0]]);
+    v.verify([
+      [1, 2, 0, 0],
+    ]);
   });
 
   test('STFT run stream flush', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.run([3, 4], v);
-    v.verify([[3, 4, 0, 0]]);
-    stft.stream([1], v);
-    stft.stream([2], v);
+    v.verify([
+      [3, 4, 0, 0],
+    ]);
+    stft
+      ..stream([1], v)
+      ..stream([2], v);
     v.verify([]);
     stft.flush(v);
-    v.verify([[1, 2, 0, 0]]);
+    v.verify([
+      [1, 2, 0, 0],
+    ]);
   });
 
   test('STFT run flush stream', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.run([3, 4], v);
-    v.verify([[3, 4, 0, 0]]);
+    v.verify([
+      [3, 4, 0, 0],
+    ]);
     stft.flush(v);
     v.verify([]);
-    stft.stream([1], v);
-    stft.stream([2], v);
+    stft
+      ..stream([1], v)
+      ..stream([2], v);
     v.verify([]);
     stft.flush(v);
-    v.verify([[1, 2, 0, 0]]);
+    v.verify([
+      [1, 2, 0, 0],
+    ]);
   });
 
   test('STFT run giant chunk stride is n', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.run([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], v, 999);
     v.verify([
       [1, 2, 3, 4],
@@ -230,49 +263,51 @@ void main() {
   });
 
   test('STFT run default chunk stride is n', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.run([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], v);
     v.verify([
       [1, 2, 3, 4],
       [5, 6, 7, 8],
       [9, 10, 11, 12],
       [13, 14, 15, 16],
-      [17, 0, 0, 0]
+      [17, 0, 0, 0],
     ]);
   });
 
   test('STFT stream default chunk stride is n', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.stream([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], v);
     v.verify([
       [1, 2, 3, 4],
       [5, 6, 7, 8],
       [9, 10, 11, 12],
-      [13, 14, 15, 16]
+      [13, 14, 15, 16],
     ]);
     stft.flush(v);
-    v.verify([[17, 0, 0, 0]]);
+    v.verify([
+      [17, 0, 0, 0],
+    ]);
   });
 
   test('STFT stream default chunk stride is n, no flush needed', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.stream([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16], v);
     v.verify([
       [1, 2, 3, 4],
       [5, 6, 7, 8],
       [9, 10, 11, 12],
-      [13, 14, 15, 16]
+      [13, 14, 15, 16],
     ]);
     stft.flush(v);
     v.verify([]);
   });
 
   test('STFT run small overlap', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.run([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17], v, 3);
     v.verify([
       [1, 2, 3, 4],
@@ -285,8 +320,8 @@ void main() {
   });
 
   test('STFT stream small overlap', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.stream([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], v, 3);
     v.verify([
       [1, 2, 3, 4],
@@ -295,12 +330,14 @@ void main() {
       [10, 11, 12, 13],
     ]);
     stft.flush(v);
-    v.verify([[13, 14, 0, 0]]);
+    v.verify([
+      [13, 14, 0, 0],
+    ]);
   });
 
   test('STFT stream small overlap, no flush needed', () {
-    final v = Verifier();
     final stft = STFT(4);
+    final v = Verifier();
     stft.stream([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], v, 3);
     v.verify([
       [1, 2, 3, 4],
@@ -313,8 +350,8 @@ void main() {
   });
 
   test('STFT run large overlap', () {
-    final v = Verifier();
     final stft = STFT(6);
+    final v = Verifier();
     stft.run([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], v, 2);
     v.verify([
       [1, 2, 3, 4, 5, 6],
@@ -327,8 +364,8 @@ void main() {
   });
 
   test('STFT stream large overlap', () {
-    final v = Verifier();
     final stft = STFT(6);
+    final v = Verifier();
     stft.stream([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], v, 2);
     v.verify([
       [1, 2, 3, 4, 5, 6],
@@ -338,12 +375,14 @@ void main() {
       [9, 10, 11, 12, 13, 14],
     ]);
     stft.flush(v);
-    v.verify([[11, 12, 13, 14, 15, 0]]);
+    v.verify([
+      [11, 12, 13, 14, 15, 0],
+    ]);
   });
 
   test('STFT stream many tiny inputs', () {
-    final v = Verifier();
     final stft = STFT(6);
+    final v = Verifier();
     for (int i = 1; i <= 20; ++i) {
       stft.stream([i.toDouble()], v);
     }
@@ -353,12 +392,14 @@ void main() {
       [13, 14, 15, 16, 17, 18],
     ]);
     stft.flush(v);
-    v.verify([[19, 20, 0, 0, 0, 0]]);
+    v.verify([
+      [19, 20, 0, 0, 0, 0],
+    ]);
   });
 
   test('STFT stream many tiny inputs, small overlap', () {
-    final v = Verifier();
     final stft = STFT(6);
+    final v = Verifier();
     for (int i = 1; i <= 20; ++i) {
       stft.stream([i.toDouble()], v, 4);
     }
@@ -369,12 +410,14 @@ void main() {
       [13, 14, 15, 16, 17, 18],
     ]);
     stft.flush(v);
-    v.verify([[17, 18, 19, 20, 0, 0]]);
+    v.verify([
+      [17, 18, 19, 20, 0, 0],
+    ]);
   });
 
   test('STFT stream many tiny inputs, large overlap', () {
-    final v = Verifier();
     final stft = STFT(6);
+    final v = Verifier();
     for (int i = 1; i <= 19; ++i) {
       stft.stream([i.toDouble()], v, 2);
     }
@@ -388,27 +431,35 @@ void main() {
       [13, 14, 15, 16, 17, 18],
     ]);
     stft.flush(v);
-    v.verify([[15, 16, 17, 18, 19, 0]]);
+    v.verify([
+      [15, 16, 17, 18, 19, 0],
+    ]);
   });
 
   test('STFT variable chunk stride', () {
-    final v = Verifier();
     final stft = STFT(6);
+    final v = Verifier();
     stft.stream([1, 2, 3], v, 5);
     v.verify([]);
     stft.stream([4, 5], v, 4);
     v.verify([]);
     stft.stream([6], v, 1);
-    v.verify([[1, 2, 3, 4, 5, 6]]);
+    v.verify([
+      [1, 2, 3, 4, 5, 6],
+    ]);
     stft.stream([7, 8, 9, 10, 11], v, 2);
     v.verify([
       [3, 4, 5, 6, 7, 8],
       [5, 6, 7, 8, 9, 10],
     ]);
     stft.stream([12, 13], v, 3);
-    v.verify([[7, 8, 9, 10, 11, 12]]);
+    v.verify([
+      [7, 8, 9, 10, 11, 12],
+    ]);
     stft.stream([14, 15], v, 4);
-    v.verify([[10, 11, 12, 13, 14, 15]]);
+    v.verify([
+      [10, 11, 12, 13, 14, 15],
+    ]);
     stft.stream([16, 17, 18], v, 1);
     v.verify([
       [11, 12, 13, 14, 15, 16],

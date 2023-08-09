@@ -222,7 +222,7 @@ class STFT {
 
     final n = size;
 
-    if (input.length == 0) {
+    if (input.isEmpty) {
       // If there's no input in streaming mode, do nothing.
       if (streaming) return;
 
@@ -241,8 +241,8 @@ class STFT {
       if (_chunkIndex == 0 && (useStreamBuffer || i > 0)) {
         // We have a previous chunk of data. Move the overlapping part to the
         // start of the chunk.
-        assert(!useStreamBuffer || i >= chunkOverlap);
         final offset = useStreamBuffer ? chunkStride : i - chunkOverlap;
+        assert(offset >= 0);
         for (_chunkIndex = 0; _chunkIndex < chunkOverlap; ++_chunkIndex) {
           _chunk[_chunkIndex] = Float64x2(src[_chunkIndex + offset], 0);
         }
@@ -282,7 +282,9 @@ class STFT {
         // TODO: Only do this on the last round.
         useStreamBuffer = true;
         src = _streamBuffer ??= Float64List(n);
-        for (int k = 0; k < n; ++k) src[k] = _chunk[k].x;
+        for (int k = 0; k < n; ++k) {
+          src[k] = _chunk[k].x;
+        }
       }
       _win?.inPlaceApplyWindow(_chunk);
       _fft.inPlaceFft(_chunk);
