@@ -1,6 +1,8 @@
-## 1.4.0-dev
+## 1.4.0
 
+- Added streaming API to STFT: STFT.stream and STFT.flush.
 - Added ComplexArray.createConjugates.
+- Added STFT.size.
 
 ## 1.3.1
 

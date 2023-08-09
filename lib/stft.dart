@@ -188,9 +188,11 @@ class STFT {
   ]) =>
       _run(input, reportChunk, chunkStride, false, false);
 
-  /// Runs STFT on [input]. This method is the same as [run], but instead of
-  /// zero padding the input to fill the final chunk, it holds on to the excess
-  /// data until the next time it is called.
+  /// Runs STFT on [input].
+  ///
+  /// This method is the same as [run], but instead of zero padding the input to
+  /// fill the final chunk, it holds on to the excess data until the next time
+  /// [stream] is called. Call [flush] to clear the buffer.
   void stream(
     List<double> input,
     Function(Float64x2List) reportChunk, [
@@ -198,8 +200,10 @@ class STFT {
   ]) =>
       _run(input, reportChunk, chunkStride, true, false);
 
-  /// Runs STFT on any remaining input in the buffer. Use after a series of
-  /// calls to [stream] to zero pad and clear the buffer.
+  /// Runs STFT on any remaining input in the buffer.
+  ///
+  /// Use after a series of calls to [stream] to zero pad and FFT the final
+  /// chunk.
   void flush(Function(Float64x2List) reportChunk) =>
       _run(const <double>[], reportChunk, 0, false, true);
 
@@ -224,20 +228,20 @@ class STFT {
 
       // If there's no input in flushing mode, and we don't have any data to
       // flush, do nothing.
-      if (flushing && (_chunkIndex % n) == 0) return;
+      if (flushing && _chunkIndex == 0) return;
     }
 
-    if (chunkStride <= 0) chunkStride = n;
+    if (chunkStride <= 0 || chunkStride > n) chunkStride = n;
     final chunkOverlap = n - chunkStride;
     bool useStreamBuffer = !oneShot && _streamBuffer != null;
     List<double> src = useStreamBuffer ? _streamBuffer! : input;
 
     // i indexes into input, _chunkIndex indexes into _chunk.
     for (int i = 0;;) {
-      if (_chunkIndex == n) {
-        assert(streaming || i >= chunkOverlap);
+      if (_chunkIndex == 0 && (useStreamBuffer || i > 0)) {
         // We have a previous chunk of data. Move the overlapping part to the
         // start of the chunk.
+        assert(!useStreamBuffer || i >= chunkOverlap);
         final offset = useStreamBuffer ? chunkStride : i - chunkOverlap;
         for (_chunkIndex = 0; _chunkIndex < chunkOverlap; ++_chunkIndex) {
           _chunk[_chunkIndex] = Float64x2(src[_chunkIndex + offset], 0);
@@ -273,7 +277,9 @@ class STFT {
         }
       }
       assert(_chunkIndex == n);
-      if (!oneShot) {
+      _chunkIndex = 0;
+      if (streaming) {
+        // TODO: Only do this on the last round.
         useStreamBuffer = true;
         src = _streamBuffer ??= Float64List(n);
         for (int k = 0; k < n; ++k) src[k] = _chunk[k].x;
@@ -283,7 +289,6 @@ class STFT {
       reportChunk(_chunk);
       if (i >= input.length) break;
     }
-    if (!streaming) _chunkIndex = 0;
   }
 
   /// Runs STFT on [input].
