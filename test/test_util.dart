@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
 import 'package:test/test.dart';
@@ -88,9 +89,25 @@ Future<void> testWindowApplyComplex(String filename, Float64List window) async {
   );
 }
 
-Future<void> testStft(String filename, STFT stft, int chunkStride) async {
+Future<void> testStft(
+    String filename, STFT stft, int chunkStride, bool streamed) async {
+  if (streamed) return;
   final raw = await readMatFile(filename);
-  final result = stft.runAndCopy(raw[0], chunkStride);
+  late List<Float64x2List> result;
+  if (streamed) {
+    result = <Float64x2List>[];
+    void reportChunk(Float64x2List o) => result.add(o);
+    final rand = Random(1234);
+    final n = raw[0].length;
+    for (int i = 0; i < n;) {
+      final j = min(i + rand.nextInt(3 * chunkStride), n);
+      stft.stream(raw[0].sublist(i, j), reportChunk, chunkStride);
+      i = j;
+    }
+    stft.flush(reportChunk);
+  } else {
+    result = stft.runAndCopy(raw[0], chunkStride);
+  }
   expect(result.length, (raw.length - 1) / 2);
   for (int i = 0; i < result.length; ++i) {
     expectClose2(result[i], makeArray2(raw[2 * i + 1], raw[2 * i + 2]));

@@ -197,7 +197,7 @@ def generateMisc(write):
     makeWindowApplyRealCase(i, 'hamming', numpy.hamming)
     makeWindowApplyComplexCase(i, 'hamming', numpy.hamming)
 
-  def makeStftCase(n, chunkSize, chunkStride, windowName = None, windowFn = None):
+  def makeStftCase(n, chunkSize, chunkStride, streamed, windowName = None, windowFn = None):
     padn = math.ceil((n - chunkSize) / chunkStride) * chunkStride + chunkSize
     hasWin = windowName is not None
     wn = windowName if hasWin else 'null'
@@ -219,15 +219,16 @@ def generateMisc(write):
       return b
     createDataset(matfile, maker)
     winCtor = ', Window.%s(%s)' % (windowName, chunkSize) if hasWin else ''
-    write("  test('STFT %s %d %d %d', () async {" % (wn, n, chunkSize, chunkStride))
-    write("    await testStft('%s', STFT(%d%s), %d);" % (matfile, chunkSize, winCtor, chunkStride))
+    write("  test('STFT %s %d %d %d %s', () async {" % (wn, n, chunkSize, chunkStride, "streamed" if streamed else "unstreamed"))
+    write("    await testStft('%s', STFT(%d%s), %d, %s);" % (matfile, chunkSize, winCtor, chunkStride, "true" if streamed else "false"))
     write('  });\n')
 
   for n in [47, 128, 1234]:
     for chunkSize in [16, 23]:
       for chunkStride in [5, chunkSize]:
-        makeStftCase(n, chunkSize, chunkStride)
-        makeStftCase(n, chunkSize, chunkStride, 'hamming', numpy.hamming)
+        for streamed in [False, True]:
+          makeStftCase(n, chunkSize, chunkStride, streamed)
+          makeStftCase(n, chunkSize, chunkStride, streamed, 'hamming', numpy.hamming)
 
   write('}\n')
 

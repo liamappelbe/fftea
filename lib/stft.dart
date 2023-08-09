@@ -130,7 +130,7 @@ class STFT {
   final FFT _fft;
   final Float64List? _win;
   final Float64x2List _chunk;
-  Float64x2List? _scratch;
+  Float64List? _streamBuffer;
   int _chunkIndex = 0;
 
   /// Constructs an STFT object of the given size, with an optional windowing
@@ -145,6 +145,9 @@ class STFT {
       );
     }
   }
+
+  /// The size of the chunks this STFT breaks the input into.
+  int get size => _chunk.length;
 
   /// Returns the frequency that the given index of FFT output represents.
   ///
@@ -183,7 +186,7 @@ class STFT {
     Function(Float64x2List) reportChunk, [
     int chunkStride = 0,
   ]) =>
-      _run(input, reportChunk, chunkStride, false);
+      _run(input, reportChunk, chunkStride, false, false);
 
   /// Runs STFT on [input]. This method is the same as [run], but instead of
   /// zero padding the input to fill the final chunk, it holds on to the excess
@@ -193,57 +196,94 @@ class STFT {
     Function(Float64x2List) reportChunk, [
     int chunkStride = 0,
   ]) =>
-      _run(input, reportChunk, chunkStride, true);
+      _run(input, reportChunk, chunkStride, true, false);
 
   /// Runs STFT on any remaining input in the buffer. Use after a series of
   /// calls to [stream] to zero pad and clear the buffer.
   void flush(Function(Float64x2List) reportChunk) =>
-      _run([], reportChunk, 0, false);
+      _run(const <double>[], reportChunk, 0, false, true);
 
   void _run(
     List<double> input,
     Function(Float64x2List) reportChunk,
     int chunkStride,
-    bool streamed,
+    bool streaming,
+    bool flushing,
   ) {
-    // If there's no input, do nothing, unless we're trying to flush and there's
-    // data to be flushed.
-    if (input.length == 0 && (streamed || _chunkIndex == 0)) return;
+    final oneShot = !(streaming || flushing);
+    if (oneShot) {
+      flush(reportChunk);
+      assert(_chunkIndex == 0);
+    }
 
-    final chunkSize = _fft.size;
-    if (chunkStride <= 0) chunkStride = chunkSize;
-    final chunkOverlap = chunkSize - chunkStride;
+    final n = size;
+
+    if (input.length == 0) {
+      // If there's no input in streaming mode, do nothing.
+      if (streaming) return;
+
+      // If there's no input in flushing mode, and we don't have any data to
+      // flush, do nothing.
+      if (flushing && (_chunkIndex % n) == 0) return;
+    }
+
+    if (chunkStride <= 0) chunkStride = n;
+    final chunkOverlap = n - chunkStride;
+    bool useStreamBuffer = !oneShot && _streamBuffer != null;
+    List<double> src = useStreamBuffer ? _streamBuffer! : input;
 
     // i indexes into input, _chunkIndex indexes into _chunk.
     for (int i = 0;;) {
-      final i2 = i + chunkSize - _chunkIndex;
-      if (i2 > input.length) {
-        int j = 0;
-        final stop = input.length - i;
-        for (; j < stop; ++j) {
-          _chunk[_chunkIndex] = Float64x2(input[i + j], 0);
-          _chunkIndex = (_chunkIndex + 1) % chunkSize;
+      if (_chunkIndex == n) {
+        assert(streaming || i >= chunkOverlap);
+        // We have a previous chunk of data. Move the overlapping part to the
+        // start of the chunk.
+        final offset = useStreamBuffer ? chunkStride : i - chunkOverlap;
+        for (_chunkIndex = 0; _chunkIndex < chunkOverlap; ++_chunkIndex) {
+          _chunk[_chunkIndex] = Float64x2(src[_chunkIndex + offset], 0);
         }
-        if (streamed) return;
-        for (; j < chunkSize; ++j) {
+        assert(_chunkIndex == chunkOverlap);
+      }
+
+      // Read from input into _chunk until we either fill the chunk or run out
+      // of input.
+      final istop = math.min(i + n - _chunkIndex, input.length);
+      for (; i < istop; ++i, ++_chunkIndex) {
+        _chunk[_chunkIndex] = Float64x2(input[i], 0);
+      }
+      assert(_chunkIndex <= n);
+
+      // Cases:
+      // Case 1: We've filled the buffer -> FFT the chunk
+      // Case 2: We didn't fill the buffer, but we're not streaming -> Zero pad
+      //         then FFT the chunk
+      // Case 3: We didn't fill the buffer, and we're streaming -> stop.
+
+      // Did we have enough data to fill the buffer?
+      if (_chunkIndex < n) {
+        // No, the buffer isn't filled. Are we in streaming mode?
+        if (streaming) {
+          // We're done. Wait for more data.
+          return;
+        }
+
+        // Not streaming, so pad the data with zeros.
+        for (; _chunkIndex < n; ++_chunkIndex) {
           _chunk[_chunkIndex] = Float64x2.zero();
-          _chunkIndex = (_chunkIndex + 1) % chunkSize;
-        }
-      } else {
-        for (int j = 0; j < chunkSize; ++j) {
-          _chunk[_chunkIndex] = Float64x2(input[i + j], 0);
-          _chunkIndex = (_chunkIndex + 1) % chunkSize;
         }
       }
-      i = i2 - chunkOverlap;
-      // TODO: Handle the case where i is now negative.
+      assert(_chunkIndex == n);
+      if (!oneShot) {
+        useStreamBuffer = true;
+        src = _streamBuffer ??= Float64List(n);
+        for (int k = 0; k < n; ++k) src[k] = _chunk[k].x;
+      }
       _win?.inPlaceApplyWindow(_chunk);
       _fft.inPlaceFft(_chunk);
       reportChunk(_chunk);
-      if (i2 >= input.length) {
-        break;
-      }
+      if (i >= input.length) break;
     }
+    if (!streaming) _chunkIndex = 0;
   }
 
   /// Runs STFT on [input].
