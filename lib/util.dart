@@ -113,15 +113,20 @@ extension ComplexArray on Float64x2List {
   /// length of the array before [discardConjugates] was called.
   ///
   /// The intended use case for this function is as part of a signal processing
-  /// pipeline that takes a real valued time domain input, FFTs it, discards the
-  /// conjugates, performs some manipulations on the complex frequency domain
-  /// signal, recreates the conjugates, then does an inverse FFT to get a real
-  /// valueed time domain output. You could get the same output by simply not
-  /// discarding the conjugates, but care must be taken to ensure that the
-  /// frequency domain manipulations preserve the conjugate symmetry, which can
-  /// be fiddly. If the symmetry is lost, then the final time domain output may
-  /// be complex valued, not purely real. So it can be easier to discard the
-  /// conjugates and then recreate them later.
+  /// pipeline like this:
+  ///
+  /// 1. Take in a real valued time domain input
+  /// 2. Perform an FFT to get the frequency domain signal
+  /// 3. Discard the redundant conjugates using [discardConjugates]
+  /// 4. Perform some manipulations on the complex frequency domain signal
+  /// 5. Recreate the conjugates using [createConjugates]
+  /// 6. Inverse FFT to get a real valued time domain output
+  ///
+  /// You could get the same output by skipping steps 3 and 5, but in that case,
+  /// care must be taken to ensure that step 4 preserves the conjugate symmetry,
+  /// which can be fiddly. If that symmetry is lost, then the final time domain
+  /// output will contain complex values, not just real values. So it's usually
+  /// easier to discard the conjugates and then recreate them later.
   ///
   /// This method returns a totally new array containing a copy of this array,
   /// with the extra values appended at the end.

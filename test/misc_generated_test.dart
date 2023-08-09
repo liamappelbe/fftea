@@ -157,111 +157,219 @@ void main() {
         'test/data/window_apply_complex_hamming_47.mat', Window.hamming(47));
   });
 
-  test('STFT null 47 16 5', () async {
-    await testStft('test/data/stft_null_47_16_5.mat', STFT(16), 5);
+  test('STFT null 47 16 5 unstreamed', () async {
+    await testStft('test/data/stft_null_47_16_5.mat', STFT(16), 5, false);
   });
 
-  test('STFT hamming 47 16 5', () async {
-    await testStft(
-        'test/data/stft_hamming_47_16_5.mat', STFT(16, Window.hamming(16)), 5);
+  test('STFT hamming 47 16 5 unstreamed', () async {
+    await testStft('test/data/stft_hamming_47_16_5.mat',
+        STFT(16, Window.hamming(16)), 5, false);
   });
 
-  test('STFT null 47 16 16', () async {
-    await testStft('test/data/stft_null_47_16_16.mat', STFT(16), 16);
+  test('STFT null 47 16 5 streamed', () async {
+    await testStft('test/data/stft_null_47_16_5.mat', STFT(16), 5, true);
   });
 
-  test('STFT hamming 47 16 16', () async {
+  test('STFT hamming 47 16 5 streamed', () async {
+    await testStft('test/data/stft_hamming_47_16_5.mat',
+        STFT(16, Window.hamming(16)), 5, true);
+  });
+
+  test('STFT null 47 16 16 unstreamed', () async {
+    await testStft('test/data/stft_null_47_16_16.mat', STFT(16), 16, false);
+  });
+
+  test('STFT hamming 47 16 16 unstreamed', () async {
     await testStft('test/data/stft_hamming_47_16_16.mat',
-        STFT(16, Window.hamming(16)), 16);
+        STFT(16, Window.hamming(16)), 16, false);
   });
 
-  test('STFT null 47 23 5', () async {
-    await testStft('test/data/stft_null_47_23_5.mat', STFT(23), 5);
+  test('STFT null 47 16 16 streamed', () async {
+    await testStft('test/data/stft_null_47_16_16.mat', STFT(16), 16, true);
   });
 
-  test('STFT hamming 47 23 5', () async {
-    await testStft(
-        'test/data/stft_hamming_47_23_5.mat', STFT(23, Window.hamming(23)), 5);
+  test('STFT hamming 47 16 16 streamed', () async {
+    await testStft('test/data/stft_hamming_47_16_16.mat',
+        STFT(16, Window.hamming(16)), 16, true);
   });
 
-  test('STFT null 47 23 23', () async {
-    await testStft('test/data/stft_null_47_23_23.mat', STFT(23), 23);
+  test('STFT null 47 23 5 unstreamed', () async {
+    await testStft('test/data/stft_null_47_23_5.mat', STFT(23), 5, false);
   });
 
-  test('STFT hamming 47 23 23', () async {
+  test('STFT hamming 47 23 5 unstreamed', () async {
+    await testStft('test/data/stft_hamming_47_23_5.mat',
+        STFT(23, Window.hamming(23)), 5, false);
+  });
+
+  test('STFT null 47 23 5 streamed', () async {
+    await testStft('test/data/stft_null_47_23_5.mat', STFT(23), 5, true);
+  });
+
+  test('STFT hamming 47 23 5 streamed', () async {
+    await testStft('test/data/stft_hamming_47_23_5.mat',
+        STFT(23, Window.hamming(23)), 5, true);
+  });
+
+  test('STFT null 47 23 23 unstreamed', () async {
+    await testStft('test/data/stft_null_47_23_23.mat', STFT(23), 23, false);
+  });
+
+  test('STFT hamming 47 23 23 unstreamed', () async {
     await testStft('test/data/stft_hamming_47_23_23.mat',
-        STFT(23, Window.hamming(23)), 23);
+        STFT(23, Window.hamming(23)), 23, false);
   });
 
-  test('STFT null 128 16 5', () async {
-    await testStft('test/data/stft_null_128_16_5.mat', STFT(16), 5);
+  test('STFT null 47 23 23 streamed', () async {
+    await testStft('test/data/stft_null_47_23_23.mat', STFT(23), 23, true);
   });
 
-  test('STFT hamming 128 16 5', () async {
-    await testStft(
-        'test/data/stft_hamming_128_16_5.mat', STFT(16, Window.hamming(16)), 5);
+  test('STFT hamming 47 23 23 streamed', () async {
+    await testStft('test/data/stft_hamming_47_23_23.mat',
+        STFT(23, Window.hamming(23)), 23, true);
   });
 
-  test('STFT null 128 16 16', () async {
-    await testStft('test/data/stft_null_128_16_16.mat', STFT(16), 16);
+  test('STFT null 128 16 5 unstreamed', () async {
+    await testStft('test/data/stft_null_128_16_5.mat', STFT(16), 5, false);
   });
 
-  test('STFT hamming 128 16 16', () async {
+  test('STFT hamming 128 16 5 unstreamed', () async {
+    await testStft('test/data/stft_hamming_128_16_5.mat',
+        STFT(16, Window.hamming(16)), 5, false);
+  });
+
+  test('STFT null 128 16 5 streamed', () async {
+    await testStft('test/data/stft_null_128_16_5.mat', STFT(16), 5, true);
+  });
+
+  test('STFT hamming 128 16 5 streamed', () async {
+    await testStft('test/data/stft_hamming_128_16_5.mat',
+        STFT(16, Window.hamming(16)), 5, true);
+  });
+
+  test('STFT null 128 16 16 unstreamed', () async {
+    await testStft('test/data/stft_null_128_16_16.mat', STFT(16), 16, false);
+  });
+
+  test('STFT hamming 128 16 16 unstreamed', () async {
     await testStft('test/data/stft_hamming_128_16_16.mat',
-        STFT(16, Window.hamming(16)), 16);
+        STFT(16, Window.hamming(16)), 16, false);
   });
 
-  test('STFT null 128 23 5', () async {
-    await testStft('test/data/stft_null_128_23_5.mat', STFT(23), 5);
+  test('STFT null 128 16 16 streamed', () async {
+    await testStft('test/data/stft_null_128_16_16.mat', STFT(16), 16, true);
   });
 
-  test('STFT hamming 128 23 5', () async {
-    await testStft(
-        'test/data/stft_hamming_128_23_5.mat', STFT(23, Window.hamming(23)), 5);
+  test('STFT hamming 128 16 16 streamed', () async {
+    await testStft('test/data/stft_hamming_128_16_16.mat',
+        STFT(16, Window.hamming(16)), 16, true);
   });
 
-  test('STFT null 128 23 23', () async {
-    await testStft('test/data/stft_null_128_23_23.mat', STFT(23), 23);
+  test('STFT null 128 23 5 unstreamed', () async {
+    await testStft('test/data/stft_null_128_23_5.mat', STFT(23), 5, false);
   });
 
-  test('STFT hamming 128 23 23', () async {
+  test('STFT hamming 128 23 5 unstreamed', () async {
+    await testStft('test/data/stft_hamming_128_23_5.mat',
+        STFT(23, Window.hamming(23)), 5, false);
+  });
+
+  test('STFT null 128 23 5 streamed', () async {
+    await testStft('test/data/stft_null_128_23_5.mat', STFT(23), 5, true);
+  });
+
+  test('STFT hamming 128 23 5 streamed', () async {
+    await testStft('test/data/stft_hamming_128_23_5.mat',
+        STFT(23, Window.hamming(23)), 5, true);
+  });
+
+  test('STFT null 128 23 23 unstreamed', () async {
+    await testStft('test/data/stft_null_128_23_23.mat', STFT(23), 23, false);
+  });
+
+  test('STFT hamming 128 23 23 unstreamed', () async {
     await testStft('test/data/stft_hamming_128_23_23.mat',
-        STFT(23, Window.hamming(23)), 23);
+        STFT(23, Window.hamming(23)), 23, false);
   });
 
-  test('STFT null 1234 16 5', () async {
-    await testStft('test/data/stft_null_1234_16_5.mat', STFT(16), 5);
+  test('STFT null 128 23 23 streamed', () async {
+    await testStft('test/data/stft_null_128_23_23.mat', STFT(23), 23, true);
   });
 
-  test('STFT hamming 1234 16 5', () async {
+  test('STFT hamming 128 23 23 streamed', () async {
+    await testStft('test/data/stft_hamming_128_23_23.mat',
+        STFT(23, Window.hamming(23)), 23, true);
+  });
+
+  test('STFT null 1234 16 5 unstreamed', () async {
+    await testStft('test/data/stft_null_1234_16_5.mat', STFT(16), 5, false);
+  });
+
+  test('STFT hamming 1234 16 5 unstreamed', () async {
     await testStft('test/data/stft_hamming_1234_16_5.mat',
-        STFT(16, Window.hamming(16)), 5);
+        STFT(16, Window.hamming(16)), 5, false);
   });
 
-  test('STFT null 1234 16 16', () async {
-    await testStft('test/data/stft_null_1234_16_16.mat', STFT(16), 16);
+  test('STFT null 1234 16 5 streamed', () async {
+    await testStft('test/data/stft_null_1234_16_5.mat', STFT(16), 5, true);
   });
 
-  test('STFT hamming 1234 16 16', () async {
+  test('STFT hamming 1234 16 5 streamed', () async {
+    await testStft('test/data/stft_hamming_1234_16_5.mat',
+        STFT(16, Window.hamming(16)), 5, true);
+  });
+
+  test('STFT null 1234 16 16 unstreamed', () async {
+    await testStft('test/data/stft_null_1234_16_16.mat', STFT(16), 16, false);
+  });
+
+  test('STFT hamming 1234 16 16 unstreamed', () async {
     await testStft('test/data/stft_hamming_1234_16_16.mat',
-        STFT(16, Window.hamming(16)), 16);
+        STFT(16, Window.hamming(16)), 16, false);
   });
 
-  test('STFT null 1234 23 5', () async {
-    await testStft('test/data/stft_null_1234_23_5.mat', STFT(23), 5);
+  test('STFT null 1234 16 16 streamed', () async {
+    await testStft('test/data/stft_null_1234_16_16.mat', STFT(16), 16, true);
   });
 
-  test('STFT hamming 1234 23 5', () async {
+  test('STFT hamming 1234 16 16 streamed', () async {
+    await testStft('test/data/stft_hamming_1234_16_16.mat',
+        STFT(16, Window.hamming(16)), 16, true);
+  });
+
+  test('STFT null 1234 23 5 unstreamed', () async {
+    await testStft('test/data/stft_null_1234_23_5.mat', STFT(23), 5, false);
+  });
+
+  test('STFT hamming 1234 23 5 unstreamed', () async {
     await testStft('test/data/stft_hamming_1234_23_5.mat',
-        STFT(23, Window.hamming(23)), 5);
+        STFT(23, Window.hamming(23)), 5, false);
   });
 
-  test('STFT null 1234 23 23', () async {
-    await testStft('test/data/stft_null_1234_23_23.mat', STFT(23), 23);
+  test('STFT null 1234 23 5 streamed', () async {
+    await testStft('test/data/stft_null_1234_23_5.mat', STFT(23), 5, true);
   });
 
-  test('STFT hamming 1234 23 23', () async {
+  test('STFT hamming 1234 23 5 streamed', () async {
+    await testStft('test/data/stft_hamming_1234_23_5.mat',
+        STFT(23, Window.hamming(23)), 5, true);
+  });
+
+  test('STFT null 1234 23 23 unstreamed', () async {
+    await testStft('test/data/stft_null_1234_23_23.mat', STFT(23), 23, false);
+  });
+
+  test('STFT hamming 1234 23 23 unstreamed', () async {
     await testStft('test/data/stft_hamming_1234_23_23.mat',
-        STFT(23, Window.hamming(23)), 23);
+        STFT(23, Window.hamming(23)), 23, false);
+  });
+
+  test('STFT null 1234 23 23 streamed', () async {
+    await testStft('test/data/stft_null_1234_23_23.mat', STFT(23), 23, true);
+  });
+
+  test('STFT hamming 1234 23 23 streamed', () async {
+    await testStft('test/data/stft_hamming_1234_23_23.mat',
+        STFT(23, Window.hamming(23)), 23, true);
   });
 }
