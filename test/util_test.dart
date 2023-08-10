@@ -116,6 +116,14 @@ void main() {
     expect(largestPrimeFactor(453974598), 101);
   });
 
+  test('Largest prime factor is above', () {
+    for (int n = 1; n <= 1000; ++n) {
+      for (int k = 2; k <= 30; ++k) {
+        expect(largestPrimeFactorIsAbove(n, k), largestPrimeFactor(n) > k);
+      }
+    }
+  });
+
   test('Prime padding heuristic', () {
     final unpadded = {
       2, 3, 5, 7, 11, 13, 17, 19, 37, 41, 73, 97, 109, 151, 163, 181, //
