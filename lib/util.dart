@@ -252,6 +252,28 @@ List<int> primeFactors(int n) {
   return a;
 }
 
+/// Merges all the twos in a prime decomposition into fours.
+///
+/// Assumes that [p] is a sorted prime decomposition. For example,
+/// `[2, 2, 2, 3, 5]` becomes `[2, 4, 3, 5]`. Note that the result won't quite
+/// be sorted.
+List<int> mergeTwosIntoFours(List<int> p) {
+  int n = 0;
+  for (final x in p) {
+    if (x != 2) break;
+    ++n;
+  }
+  final q = <int>[];
+  if (n.isOdd) q.add(2);
+  for (int i = 1; i < n; i += 2) {
+    q.add(4);
+  }
+  for (int i = n; i < p.length; ++i) {
+    q.add(p[i]);
+  }
+  return q;
+}
+
 /// Returns the largest prime factor of [n].
 ///
 /// For example, 120 returns 5.

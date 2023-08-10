@@ -22,8 +22,8 @@ void main() {
     expect(FFT(1).toString(), 'NaiveFFT(1)');
     expect(FFT(2).toString(), 'Fixed2FFT()');
     expect(FFT(3).toString(), 'Fixed3FFT()');
-    expect(FFT(4).toString(), 'NaiveFFT(4)');
-    expect(FFT(5).toString(), 'NaiveFFT(5)');
+    expect(FFT(4).toString(), 'Fixed4FFT()');
+    expect(FFT(5).toString(), 'Fixed5FFT()');
     expect(FFT(6).toString(), 'NaiveFFT(6)');
     expect(FFT(7).toString(), 'NaiveFFT(7)');
     expect(FFT(8).toString(), 'NaiveFFT(8)');

@@ -88,6 +88,16 @@ void main() {
     }
   });
 
+  test('Merge twos into fours', () {
+    expect(mergeTwosIntoFours([3, 5, 7]), [3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 3, 5, 7]), [2, 3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 2, 3, 5, 7]), [4, 3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 2, 2, 3, 5, 7]), [2, 4, 3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 2, 2, 2, 3, 5, 7]), [4, 4, 3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 2, 2, 2, 2, 3, 5, 7]), [2, 4, 4, 3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 2, 2, 2, 2, 2, 3, 5, 7]), [4, 4, 4, 3, 5, 7]);
+  });
+
   test('Prime factors', () {
     expect(primeFactors(1), []);
     expect(primeFactors(2), [2]);
