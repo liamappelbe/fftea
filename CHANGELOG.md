@@ -1,3 +1,7 @@
+## 1.4.1-dev
+
+- Small optimisation to primePaddingHeuristic
+
 ## 1.4.0
 
 - Added streaming API to STFT: STFT.stream and STFT.flush.
