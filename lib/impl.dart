@@ -533,9 +533,6 @@ class Fixed5FFT extends _StridedFFT {
       final b4 = w[wstride3 + wstride];
       x4 = Float64x2(x4.x * b4.x - x4.y * b4.y, x4.x * b4.y + x4.y * b4.x);
     }
-    Float64x2 tw(z, x, y) {
-      return Float64x2(z.x * x - z.y * y, z.y * x + z.x * y);
-    }
     final x14 = x1 + x4;
     final x23 = x2 + x3;
     final d14 = x1 - x4;
