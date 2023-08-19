@@ -287,6 +287,8 @@ def run(gen, testName, *args):
 
 run(generate, 'fixed2_fft', 'Fixed2FFT', [2])
 run(generate, 'fixed3_fft', 'Fixed3FFT', [3])
+run(generate, 'fixed4_fft', 'Fixed4FFT', [4])
+run(generate, 'fixed5_fft', 'Fixed5FFT', [5])
 run(generate, 'radix2_fft', 'Radix2FFT', [2 ** i for i in range(11)])
 run(generate, 'naive_fft', 'NaiveFFT', [i + 1 for i in range(16)])
 run(generate, 'prime_padded_fft', 'PrimeFFT',

@@ -1,5 +1,7 @@
-## 1.4.1-dev
+## 1.4.1
 
+- Special case FFTs of size 4 and 5, which are base cases of composite FFT. This
+  speeds up FFTs that hit them by about 10%.
 - Small optimisation to primePaddingHeuristic
 
 ## 1.4.0

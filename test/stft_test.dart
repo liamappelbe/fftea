@@ -48,7 +48,7 @@ void main() {
     stft.run([3, 4], v);
     v.verify([
       [1, 2, 0, 0],
-      [3, 4, 0, 0]
+      [3, 4, 0, 0],
     ]);
   });
 
@@ -57,11 +57,11 @@ void main() {
     final v = Verifier();
     stft.stream([1, 2, 3, 4], v);
     v.verify([
-      [1, 2, 3, 4]
+      [1, 2, 3, 4],
     ]);
     stft.run([5, 6, 7, 8], v);
     v.verify([
-      [5, 6, 7, 8]
+      [5, 6, 7, 8],
     ]);
   });
 
@@ -73,7 +73,7 @@ void main() {
     stft.run([], v);
     v.verify([
       [1, 2, 0, 0],
-      [0, 0, 0, 0]
+      [0, 0, 0, 0],
     ]);
   });
 
@@ -89,7 +89,7 @@ void main() {
     v.verify([]);
     stft.run([], v);
     v.verify([
-      [0, 0, 0, 0]
+      [0, 0, 0, 0],
     ]);
   });
 
@@ -100,7 +100,7 @@ void main() {
     v.verify([]);
     stft.flush(v);
     v.verify([
-      [1, 2, 0, 0]
+      [1, 2, 0, 0],
     ]);
   });
 
