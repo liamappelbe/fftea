@@ -271,6 +271,23 @@ int largestPrimeFactor(int n) {
   return maxp;
 }
 
+/// Returns whether `largestPrimeFactor(n) > k`.
+///
+/// This function is significantly more efficient than doing that check
+/// explicitly.
+bool largestPrimeFactorIsAbove(int n, int k) {
+  for (int i = 0, p = 2;;) {
+    if (p * p > n || p > k) break;
+    if (n % p != 0) {
+      i += 1;
+      p = primes.getPrime(i);
+    } else {
+      n ~/= p;
+    }
+  }
+  return n > k;
+}
+
 /// Returns whether padding the PrimeFFT to a power of two size is likely to be
 /// faster than not padding it.
 ///
@@ -279,7 +296,7 @@ int largestPrimeFactor(int n) {
 /// simple heuristic is wrong.
 bool primePaddingHeuristic(int n) {
   if (n == 31 || n == 61 || n == 101 || n == 241 || n == 251) return true;
-  return largestPrimeFactor(n - 1) > 5;
+  return largestPrimeFactorIsAbove(n - 1, 5);
 }
 
 /// Returns the highest set bit of [x], where [x] is a power of 2.
