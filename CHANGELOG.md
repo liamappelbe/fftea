@@ -1,3 +1,7 @@
+## 1.5.0
+
+- Added an audio resampling util.
+
 ## 1.4.1
 
 - Special case FFTs of size 4 and 5, which are base cases of composite FFT. This

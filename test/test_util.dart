@@ -140,6 +140,18 @@ Future<void> testLinConv(String filename) async {
   expectClose(result2, raw[2]);
 }
 
+Future<void> testResample(String filename) async {
+  final raw = await readMatFile(filename);
+  expect(raw.length, 2);
+  final result1 = resample(raw[0], raw[1].length);
+  expectClose(result1, raw[1]);
+  final ratio = raw[1].length / raw[0].length;
+  final result2 = resampleByRatio(raw[0], ratio);
+  expectClose(result2, raw[1]);
+  final result3 = resampleByRate(raw[0], 44100, ratio * 44100);
+  expectClose(result3, raw[1]);
+}
+
 Future<List<List<double>>> readMatFile(String filename) async {
   final bytes = await File(filename).readAsBytes();
   int p = 0;

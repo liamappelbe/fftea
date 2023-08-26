@@ -81,7 +81,9 @@ extension ComplexArray on Float64x2List {
     }
   }
 
-  static int _discConjLen(int length) {
+  /// Returns the length of the result of calling [discardConjugates] on a list
+  /// of the given [length]. See [discardConjugates] for more information.
+  static int discardConjugatesLength(int length) {
     return (length == 0) ? 0 : ((length >>> 1) + 1);
   }
 
@@ -100,7 +102,7 @@ extension ComplexArray on Float64x2List {
   /// This method returns a new array (which is a view into the same data). It
   /// does not modify this array, or make a copy of the data.
   Float64x2List discardConjugates() {
-    return Float64x2List.sublistView(this, 0, _discConjLen(length));
+    return Float64x2List.sublistView(this, 0, discardConjugatesLength(length));
   }
 
   /// Creates redundant conjugate terms. This is the inverse of
@@ -131,7 +133,7 @@ extension ComplexArray on Float64x2List {
   /// This method returns a totally new array containing a copy of this array,
   /// with the extra values appended at the end.
   Float64x2List createConjugates(int outputLength) {
-    if (_discConjLen(outputLength) != length) {
+    if (discardConjugatesLength(outputLength) != length) {
       throw ArgumentError(
         'Output length must be either (2 * length - 2) or (2 * length - 1).',
         'outputLength',
