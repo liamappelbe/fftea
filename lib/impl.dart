@@ -153,8 +153,9 @@ abstract class FFT {
   /// Performs an inverse FFT and discards the imaginary components of the
   /// result. Returns a newly allocated [Float64List].
   ///
-  /// This method expects the full result of [realFft], so don't use
-  /// [ComplexArray.discardConjugates] if you need to call [realInverseFft].
+  /// This method expects the full result of [realFft], so if you use
+  /// [ComplexArray.discardConjugates], remember to use
+  /// [ComplexArray.createConjugates] before calling [realInverseFft].
   ///
   /// WARINING: For efficiency reasons, this modifies [complexArray]. If you
   /// need the original values in [complexArray] to remain unmodified, make a

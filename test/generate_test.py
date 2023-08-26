@@ -278,6 +278,35 @@ def generateConv(write, circSizes, linSizes):
 
   write('}\n')
 
+def generateResamp(write, sizes):
+  write(kPreamble)
+
+  for insize, outsize in sizes:
+    matfile = 'test/data/resample_%d_%d.mat' % (insize, outsize)
+    def includeFreq(f, size):
+      return f * 2 <= size
+    def addFreq(a, f):
+      if not includeFreq(f, len(a)):
+        return
+      dt = f * 2 * math.pi / len(a)
+      for i in range(len(a)):
+        a[i] += math.sin(i * dt) / math.sqrt(f)
+    def maker():
+      a = [0] * insize
+      b = [0] * outsize
+      f = 1
+      while includeFreq(f, insize) and includeFreq(f, outsize):
+        addFreq(a, f)
+        addFreq(b, f)
+        f = math.ceil(f * 1.5)
+      return [a, b]
+    createDataset(matfile, maker)
+    write("  test('Resample %d %d', () async {" % (insize, outsize))
+    write("    await testResample('%s');" % (matfile))
+    write('  });\n')
+
+  write('}\n')
+
 def run(gen, testName, *args):
   outFile = os.path.normpath(os.path.join(
       os.path.dirname(__file__), testName + '_generated_test.dart'))
@@ -304,5 +333,7 @@ run(generateConv, 'convolution',
     (1024, 1024, 1024), (2000, 3000, 1400), (123, 456, None), (456, 789, None),
     (1234, 1234, None)],
     [(1, 1), (4, 4), (5, 47), (91, 12), (127, 129), (337, 321), (1024, 1024)])
+run(generateResamp, 'resample',
+    [(1000, outsize) for outsize in [100, 300, 800, 1000, 1500, 2000, 5000]])
 run(generateMisc, 'misc')
 print('Done :)')
