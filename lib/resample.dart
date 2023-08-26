@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import 'dart:typed_data';
+
+import 'impl.dart' show FFT;
+import 'util.dart' show ComplexArray;
+
 /// Resamples the [input] audio to the given [outputLength].
 ///
 /// Returns a new array of length [outputLength] containing the resampled
@@ -25,12 +30,6 @@
 /// requires a bit more design work to match the parameters to the use case. If
 /// you just want something that works well enough, this function is a good
 /// starting point.
-
-import 'dart:typed_data';
-
-import 'impl.dart' show FFT;
-import 'util.dart' show ComplexArray;
-
 Float64List resample(List<double> input, int outputLength) {
   if (input.length == outputLength) {
     return Float64List.fromList(input);
