@@ -120,6 +120,23 @@ extension Window on Float64List {
       return 0.42 - 0.5 * math.cos(t) + 0.08 * math.cos(2 * t);
     });
   }
+
+  static Float64List gaussian(
+    int size, {
+    double alpha = 0.25,
+  }) {
+    final res = Float64List(size);
+    final samplingPeriods = (size - 1) * 0.5;
+
+    // standard deviation is alpha * size/2
+    final standardDeviation = (alpha * (size - 1)) * 0.5;
+    for (int i = 0; i < size; i++) {
+      final x = -0.5 * math.pow((i - samplingPeriods) / standardDeviation, 2);
+      res[i] = math.exp(x);
+    }
+
+    return res;
+  }
 }
 
 /// Performs STFTs (Short-time Fourier Transforms).
