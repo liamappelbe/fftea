@@ -1,3 +1,7 @@
+## 1.5.0+1
+
+- Improve example documentation.
+
 ## 1.5.0
 
 - Added an audio resampling util.
