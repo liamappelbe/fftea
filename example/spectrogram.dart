@@ -18,28 +18,92 @@ import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
 import 'package:wav/wav.dart';
 
-Float64List normalizeRmsVolume(List<double> a, double target) {
-  final b = Float64List.fromList(a);
+// Displays a spectrogram of the input audio, using STFT.
+//
+// To generate the spectrogram, we break the audio into small chunks, FFT the
+// chunk to get frequency, divide the frequencies into buckets, and print a
+// character indicating the power of that frequency bucket. A darker shading
+// means that group of frequencies is louder at that time. Time goes from top
+// top bottom, with low frequencies on the left and high on the right.
+//
+// https://en.wikipedia.org/wiki/Spectrogram
+void main(List<String> argv) async {
+  if (argv.length != 1) {
+    print('Wrong number of args. Usage:');
+    print('  dart run spectrogram.dart test.wav');
+    return;
+  }
+
+  // Load the user's WAV file and normalize its volume.
+  final wav = await Wav.readFile(argv[0]);
+  final audio = normalizeRmsVolume(wav.toMono(), 0.3);
+
+  // Set up the STFT. The chunk size is the number of audio samples in each
+  // chunk to be FFT'd. The buckets is the number of frequency buckets to
+  // split the resulting FFT into when printing.
+  const chunkSize = 2048;
+  final stft = STFT(chunkSize, Window.hanning(chunkSize));
+  const buckets = 120;
+
+  // STFT divides the input into chunks, and runs an FFT on all the chunks.
+  stft.run(
+    audio,
+    // This callback is called for each FFT'd chunk.
+    (Float64x2List chunk) {
+      // FFTs of real valued data contain a lot of redundant frequency data that
+      // we don't want to see in our spectrogram, so discard it. See
+      // [ComplexArray.discardConjugates] for more info. We also don't care
+      // about the phase of the frequencies, just the amplitude, so calculate
+      // magnitudes.
+      final amp = chunk.discardConjugates().magnitudes();
+
+      for (int bucket = 0; bucket < buckets; ++bucket) {
+        // Calculate the bucket endpoints.
+        int start = (amp.length * bucket) ~/ buckets;
+        int end = (amp.length * (bucket + 1)) ~/ buckets;
+
+        // RMS works in the frequency domain too. This is essentially
+        // calculating what the perceived volume would be if we were only
+        // listening to this frequency bucket. Technically there are some
+        // scaling factors I'm ignoring.
+        // https://en.wikipedia.org/wiki/Root_mean_square#In_frequency_domain
+        double power = rms(Float64List.sublistView(amp, start, end));
+
+        stdout.write(gradient(power));
+      }
+      stdout.write('\n');
+    },
+    // Stride by half the chunk size, so that the chunks overlap.
+    chunkSize ~/ 2,
+  );
+}
+
+// Calculates the RMS volume of the audio. This is a decent approxiation of
+// human perception of loudness.
+// https://en.wikipedia.org/wiki/Root_mean_square
+double rms(List<double> audio) {
+  if (audio.isEmpty) {
+    return 0;
+  }
   double squareSum = 0;
-  for (final x in b) {
+  for (final x in audio) {
     squareSum += x * x;
   }
-  double factor = target * math.sqrt(b.length / squareSum);
-  for (int i = 0; i < b.length; ++i) {
-    b[i] *= factor;
-  }
-  return b;
+  return math.sqrt(squareSum / audio.length);
 }
 
-Uint64List linSpace(int end, int steps) {
-  final a = Uint64List(steps);
-  for (int i = 1; i < steps; ++i) {
-    a[i - 1] = (end * i) ~/ steps;
+// Returns a copy of the input audio, with the amplitude adjusted so that the
+// RMS volume of the result is set to the target.
+Float64List normalizeRmsVolume(List<double> audio, double target) {
+  double factor = target / rms(audio);
+  final output = Float64List.fromList(audio);
+  for (int i = 0; i < audio.length; ++i) {
+    output[i] *= factor;
   }
-  a[steps - 1] = end;
-  return a;
+  return output;
 }
 
+// Converts audio power into a unicode gradient for printing.
 String gradient(double power) {
   const scale = 2;
   const levels = [' ', '░', '▒', '▓', '█'];
@@ -47,39 +111,4 @@ String gradient(double power) {
   if (index < 0) index = 0;
   if (index >= levels.length) index = levels.length - 1;
   return levels[index];
-}
-
-void main(List<String> argv) async {
-  if (argv.length != 1) {
-    print('Wrong number of args. Usage:');
-    print('  dart run spectrogram.dart test.wav');
-    return;
-  }
-  final wav = await Wav.readFile(argv[0]);
-  final audio = normalizeRmsVolume(wav.toMono(), 0.3);
-  const chunkSize = 2048;
-  const buckets = 120;
-  final stft = STFT(chunkSize, Window.hanning(chunkSize));
-  Uint64List? logItr;
-  stft.run(
-    audio,
-    (Float64x2List chunk) {
-      final amp = chunk.discardConjugates().magnitudes();
-      logItr ??= linSpace(amp.length, buckets);
-      int i0 = 0;
-      for (final i1 in logItr!) {
-        double power = 0;
-        if (i1 != i0) {
-          for (int i = i0; i < i1; ++i) {
-            power += amp[i];
-          }
-          power /= i1 - i0;
-        }
-        stdout.write(gradient(power));
-        i0 = i1;
-      }
-      stdout.write('\n');
-    },
-    chunkSize ~/ 2,
-  );
 }
