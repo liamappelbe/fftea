@@ -585,7 +585,7 @@ class CompositeFFT extends FFT {
   final Float64x2List _out;
   final Float64x2List _twiddles;
   late final Float64x2List _innerBuf;
-  final Uint64List _perm;
+  final Uint32List _perm;
   final _ffts = <List<_CompositeFFTJob>>[];
 
   /// Constructs an FFT object with the given size.
@@ -593,7 +593,7 @@ class CompositeFFT extends FFT {
       : _buf = Float64x2List(size),
         _out = Float64x2List(size),
         _twiddles = twiddleFactors(size),
-        _perm = Uint64List(size),
+        _perm = Uint32List(size),
         super._(size) {
     final decomp = mergeTwosIntoFours(primeDecomp(size));
     for (int i = 0; i < decomp.length; ++i) {
