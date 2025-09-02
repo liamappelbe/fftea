@@ -16,8 +16,8 @@ is useful for all sorts of applications:
 - Convolutions, such as reverb filters for audio, or blurring filters for images
 
 This library supports FFT of real or complex arrays of any size. It also
-includes some related utilities, such as windowing functions, STFT, and inverse
-FFT.
+includes some related utilities, such as windowing functions, STFT, inverse FFT,
+and circular and linear convolution.
 
 ## Usage
 
@@ -88,6 +88,9 @@ If you need to squeeze every last CPU cycle out of your FFT, try these tips:
   spectrogram, you can usually just round up the chunk size to the next power of
   two. Or if you're filtering some audio, try padding your input with silence
   until it's a power of two, and then trimming the silence afterwards.
+- Try to use smaller FFTs if possible. For example, if you're doing STFT,
+  smaller chunk sizes are faster. It's faster to do two FFTs of size N than one
+  FFT of size 2N.
 
 ## Technical Details
 

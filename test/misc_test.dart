@@ -22,8 +22,8 @@ void main() {
     expect(FFT(1).toString(), 'NaiveFFT(1)');
     expect(FFT(2).toString(), 'Fixed2FFT()');
     expect(FFT(3).toString(), 'Fixed3FFT()');
-    expect(FFT(4).toString(), 'NaiveFFT(4)');
-    expect(FFT(5).toString(), 'NaiveFFT(5)');
+    expect(FFT(4).toString(), 'Fixed4FFT()');
+    expect(FFT(5).toString(), 'Fixed5FFT()');
     expect(FFT(6).toString(), 'NaiveFFT(6)');
     expect(FFT(7).toString(), 'NaiveFFT(7)');
     expect(FFT(8).toString(), 'NaiveFFT(8)');
@@ -81,6 +81,24 @@ void main() {
     expect(fft.frequency(2, 4), 0.5);
   });
 
+  test('FFT.indexOfFrequency', () {
+    final fft = FFT(16);
+    expect(fft.indexOfFrequency(0, 32), 0);
+    expect(fft.indexOfFrequency(2, 32), 1);
+    expect(fft.indexOfFrequency(4, 32), 2);
+    expect(fft.indexOfFrequency(16, 32), 8);
+    expect(fft.indexOfFrequency(0.5, 4), 2);
+    expect(fft.indexOfFrequency(0.375, 4), 1.5);
+  });
+
+  test('FFT.indexOfFrequency inverts FFT.frequency', () {
+    final fft = FFT(16);
+    for (int i = 0; i < 100; ++i) {
+      final freq = fft.frequency(i, 12.3);
+      expect(fft.indexOfFrequency(freq, 12.3), closeTo(i, 1e-6));
+    }
+  });
+
   test('STFT.frequency', () {
     final stft = STFT(64);
     expect(stft.frequency(0, 32), 0);
@@ -88,6 +106,24 @@ void main() {
     expect(stft.frequency(2, 32), 1);
     expect(stft.frequency(8, 32), 4);
     expect(stft.frequency(32, 1024), 512);
+  });
+
+  test('STFT.indexOfFrequency', () {
+    final stft = STFT(64);
+    expect(stft.indexOfFrequency(0, 32), 0);
+    expect(stft.indexOfFrequency(0.5, 32), 1);
+    expect(stft.indexOfFrequency(1, 32), 2);
+    expect(stft.indexOfFrequency(4, 32), 8);
+    expect(stft.indexOfFrequency(512, 1024), 32);
+    expect(stft.indexOfFrequency(6, 256), 1.5);
+  });
+
+  test('STFT.indexOfFrequency inverts STFT.frequency', () {
+    final fft = STFT(64);
+    for (int i = 0; i < 100; ++i) {
+      final freq = fft.frequency(i, 83945);
+      expect(fft.indexOfFrequency(freq, 83945), closeTo(i, 1e-6));
+    }
   });
 
   test('FFT bad size', () {

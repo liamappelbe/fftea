@@ -51,6 +51,12 @@ abstract class FFT {
     if (size == 3) {
       return Fixed3FFT();
     }
+    if (size == 4) {
+      return Fixed4FFT();
+    }
+    if (size == 5) {
+      return Fixed5FFT();
+    }
     if (size < _kAlwaysNaiveThreshold) {
       return NaiveFFT(size);
     }
@@ -147,8 +153,9 @@ abstract class FFT {
   /// Performs an inverse FFT and discards the imaginary components of the
   /// result. Returns a newly allocated [Float64List].
   ///
-  /// This method expects the full result of [realFft], so don't use
-  /// [ComplexArray.discardConjugates] if you need to call [realInverseFft].
+  /// This method expects the full result of [realFft], so if you use
+  /// [ComplexArray.discardConjugates], remember to use
+  /// [ComplexArray.createConjugates] before calling [realInverseFft].
   ///
   /// WARINING: For efficiency reasons, this modifies [complexArray]. If you
   /// need the original values in [complexArray] to remain unmodified, make a
@@ -172,6 +179,17 @@ abstract class FFT {
   /// result is also in Hz.
   double frequency(int index, double samplesPerSecond) {
     return index * samplesPerSecond / size;
+  }
+
+  /// Returns the index in the FFT output that corresponds to the given
+  /// frequency. This is the inverse of [frequency].
+  ///
+  /// [samplesPerSecond] is the sampling rate of the input signal in Hz. [freq]
+  /// is also in Hz. The result is a double because the target [freq] might not
+  /// exactly land on an FFT index. Decide whether to round, floor, or ceil the
+  /// result based on your use case.
+  double indexOfFrequency(double freq, double samplesPerSecond) {
+    return freq * size / samplesPerSecond;
   }
 }
 
@@ -277,6 +295,11 @@ class Radix2FFT extends FFT {
 abstract class _StridedFFT extends FFT {
   _StridedFFT._(int size) : super._(size);
 
+  @override
+  void _inPlaceFftImpl(Float64x2List complexArray) {
+    _stridedFft(complexArray, complexArray, 1, 0, null, 0);
+  }
+
   // Note: inp and out may or may not need to be distinct. If you don't know the
   // underlying implementation, assume they need to be distinct.
   void _stridedFft(
@@ -354,11 +377,6 @@ class Fixed2FFT extends _StridedFFT {
   /// Constructs an FFT object.
   Fixed2FFT() : super._(2);
 
-  @override
-  void _inPlaceFftImpl(Float64x2List complexArray) {
-    _stridedFft(complexArray, complexArray, 1, 0, null, 0);
-  }
-
   // Note: inp and out don't have to be distinct.
   @override
   void _stridedFft(
@@ -393,11 +411,6 @@ class Fixed3FFT extends _StridedFFT {
   static const double _tx = -0.5;
   static const double _ty = -0.8660254037844387;
 
-  @override
-  void _inPlaceFftImpl(Float64x2List complexArray) {
-    _stridedFft(complexArray, complexArray, 1, 0, null, 0);
-  }
-
   // Note: inp and out don't have to be distinct.
   @override
   void _stridedFft(
@@ -430,6 +443,122 @@ class Fixed3FFT extends _StridedFFT {
 
   @override
   String toString() => 'Fixed3FFT()';
+}
+
+/// Performs FFTs (Fast Fourier Transforms) of size 4.
+///
+/// This is mainly useful as a base case of [CompositeFFT].
+class Fixed4FFT extends _StridedFFT {
+  /// Constructs an FFT object.
+  Fixed4FFT() : super._(4);
+
+  // Note: inp and out don't have to be distinct.
+  @override
+  void _stridedFft(
+    Float64x2List inp,
+    Float64x2List out,
+    int stride,
+    int off,
+    Float64x2List? w,
+    int wstride,
+  ) {
+    final x0 = inp[off];
+    final off1 = off + stride;
+    Float64x2 x1 = inp[off1];
+    final off2 = off1 + stride;
+    Float64x2 x2 = inp[off2];
+    final off3 = off2 + stride;
+    Float64x2 x3 = inp[off3];
+    if (w != null) {
+      final b1 = w[wstride];
+      x1 = Float64x2(x1.x * b1.x - x1.y * b1.y, x1.x * b1.y + x1.y * b1.x);
+      final wstride2 = wstride + wstride;
+      final b2 = w[wstride2];
+      x2 = Float64x2(x2.x * b2.x - x2.y * b2.y, x2.x * b2.y + x2.y * b2.x);
+      final b3 = w[wstride2 + wstride];
+      x3 = Float64x2(x3.x * b3.x - x3.y * b3.y, x3.x * b3.y + x3.y * b3.x);
+    }
+    final x02 = x0 + x2;
+    final x02d = x0 - x2;
+    final x13 = x1 + x3;
+    final x13r = Float64x2(-x1.y + x3.y, x1.x - x3.x);
+    out[off] = x02 + x13;
+    out[off1] = x02d - x13r;
+    out[off2] = x02 - x13;
+    out[off3] = x02d + x13r;
+  }
+
+  @override
+  String toString() => 'Fixed4FFT()';
+}
+
+/// Performs FFTs (Fast Fourier Transforms) of size 5.
+///
+/// This is mainly useful as a base case of [CompositeFFT].
+class Fixed5FFT extends _StridedFFT {
+  /// Constructs an FFT object.
+  Fixed5FFT() : super._(5);
+  static const double _tx1 = 0.309016994374947;
+  static const double _ty1 = 0.951056516295153;
+  static const double _tx2 = -0.809016994374947;
+  static const double _ty2 = 0.587785252292473;
+
+  // Note: inp and out don't have to be distinct.
+  @override
+  void _stridedFft(
+    Float64x2List inp,
+    Float64x2List out,
+    int stride,
+    int off,
+    Float64x2List? w,
+    int wstride,
+  ) {
+    final x0 = inp[off];
+    final off1 = off + stride;
+    Float64x2 x1 = inp[off1];
+    final off2 = off1 + stride;
+    Float64x2 x2 = inp[off2];
+    final off3 = off2 + stride;
+    Float64x2 x3 = inp[off3];
+    final off4 = off3 + stride;
+    Float64x2 x4 = inp[off4];
+    if (w != null) {
+      final b1 = w[wstride];
+      x1 = Float64x2(x1.x * b1.x - x1.y * b1.y, x1.x * b1.y + x1.y * b1.x);
+      final wstride2 = wstride + wstride;
+      final b2 = w[wstride2];
+      x2 = Float64x2(x2.x * b2.x - x2.y * b2.y, x2.x * b2.y + x2.y * b2.x);
+      final wstride3 = wstride2 + wstride;
+      final b3 = w[wstride3];
+      x3 = Float64x2(x3.x * b3.x - x3.y * b3.y, x3.x * b3.y + x3.y * b3.x);
+      final b4 = w[wstride3 + wstride];
+      x4 = Float64x2(x4.x * b4.x - x4.y * b4.y, x4.x * b4.y + x4.y * b4.x);
+    }
+    final x14 = x1 + x4;
+    final x23 = x2 + x3;
+    final d14 = x1 - x4;
+    final d23 = x2 - x3;
+    final d14r = Float64x2(d14.y, -d14.x);
+    final d23r = Float64x2(d23.y, -d23.x);
+    final tx1 = Float64x2(_tx1, _tx1);
+    final tx2 = Float64x2(_tx2, _tx2);
+    final ty1 = Float64x2(_ty1, _ty1);
+    final ty2 = Float64x2(_ty2, _ty2);
+    final tx12 = x0 + x14 * tx1 + x23 * tx2;
+    final tx21 = x0 + x14 * tx2 + x23 * tx1;
+    final d14ty1 = ty1 * d14r;
+    final d14ty2 = ty2 * d14r;
+    final d23ty1 = ty1 * d23r;
+    final d23ty2 = ty2 * d23r;
+    out[off] = x0 + x14 + x23;
+    out[off1] = tx12 + d14ty1 + d23ty2;
+    out[off2] = tx21 + d14ty2 - d23ty1;
+    out[off3] = tx21 - d14ty2 + d23ty1;
+    out[off4] = tx12 - d14ty1 - d23ty2;
+  }
+
+  @override
+  String toString() => 'Fixed5FFT()';
 }
 
 // Represents a single stage of execution of [CompositeFFT].
@@ -466,7 +595,7 @@ class CompositeFFT extends FFT {
         _twiddles = twiddleFactors(size),
         _perm = Uint64List(size),
         super._(size) {
-    final decomp = primeDecomp(size);
+    final decomp = mergeTwosIntoFours(primeDecomp(size));
     for (int i = 0; i < decomp.length; ++i) {
       _ffts.add(<_CompositeFFTJob>[]);
     }
@@ -574,11 +703,6 @@ class PrimeFFT extends _StridedFFT {
           padToPow2,
           padToPow2 ? nextPowerOf2((size - 1) << 1) : size - 1,
         );
-
-  @override
-  void _inPlaceFftImpl(Float64x2List complexArray) {
-    _stridedFft(complexArray, complexArray, 1, 0, null, 0);
-  }
 
   // Note: inp and out don't have to be distinct.
   @override

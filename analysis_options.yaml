@@ -15,8 +15,12 @@
 include: package:lints/recommended.yaml
 
 analyzer:
-  strong-mode:
-    implicit-casts: false
+  # Some of the libraries we benchmark haven't been ported to null safety, and
+  # likely never will be, so aren't compatible with dart 3.
+  exclude:
+    - bench/**
+  language:
+    strict-casts: true
 
 linter:
   rules:
@@ -27,11 +31,11 @@ linter:
   - avoid_unused_constructor_parameters
   - cancel_subscriptions
   - cascade_invocations
+  - collection_methods_unrelated_type
   - directives_ordering
   - join_return_with_assignment
   - library_private_types_in_public_api
   - lines_longer_than_80_chars
-  - list_remove_unrelated_type
   - missing_whitespace_between_adjacent_strings
   - no_runtimeType_toString
   - only_throw_errors

@@ -12,14 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Generate fftea_generated_test.dart:
-#   python3 test/generate_test.py
+# Generate all *_generated_test.dart files:
+#   python3 test/generate_test.py && dart format .
+
+# Requires numpy.
 
 import numpy
 import math
 import random
 import struct
 import os
+
+random.seed(2365817263)
 
 kNumsPerLine = 4
 
@@ -193,7 +197,7 @@ def generateMisc(write):
     makeWindowApplyRealCase(i, 'hamming', numpy.hamming)
     makeWindowApplyComplexCase(i, 'hamming', numpy.hamming)
 
-  def makeStftCase(n, chunkSize, chunkStride, windowName = None, windowFn = None):
+  def makeStftCase(n, chunkSize, chunkStride, streamed, windowName = None, windowFn = None):
     padn = math.ceil((n - chunkSize) / chunkStride) * chunkStride + chunkSize
     hasWin = windowName is not None
     wn = windowName if hasWin else 'null'
@@ -215,37 +219,121 @@ def generateMisc(write):
       return b
     createDataset(matfile, maker)
     winCtor = ', Window.%s(%s)' % (windowName, chunkSize) if hasWin else ''
-    write("  test('STFT %s %d %d %d', () async {" % (wn, n, chunkSize, chunkStride))
-    write("    await testStft('%s', STFT(%d%s), %d);" % (matfile, chunkSize, winCtor, chunkStride))
+    write("  test('STFT %s %d %d %d %s', () async {" % (wn, n, chunkSize, chunkStride, "streamed" if streamed else "unstreamed"))
+    write("    await testStft('%s', STFT(%d%s), %d, %s);" % (matfile, chunkSize, winCtor, chunkStride, "true" if streamed else "false"))
     write('  });\n')
 
   for n in [47, 128, 1234]:
     for chunkSize in [16, 23]:
       for chunkStride in [5, chunkSize]:
-        makeStftCase(n, chunkSize, chunkStride)
-        makeStftCase(n, chunkSize, chunkStride, 'hamming', numpy.hamming)
+        for streamed in [False, True]:
+          makeStftCase(n, chunkSize, chunkStride, streamed)
+          makeStftCase(n, chunkSize, chunkStride, streamed, 'hamming', numpy.hamming)
 
   write('}\n')
 
-def run(gen, filename, *args):
-  outFile = os.path.normpath(os.path.join(os.path.dirname(__file__), filename))
+def circConv(a, b, n):
+  # Numpy and scipy seem to offset the result. So just doing slow naive version.
+  if n is None:
+    n = max(len(a), len(b))
+  aa = [a[i] if i < len(a) else 0 for i in range(n)]
+  bb = [b[i] if i < len(b) else 0 for i in range(n)]
+  return [sum([aa[j] * bb[(i - j) % n] for j in range(n)]) for i in range(n)]
+
+def linConv(a, b):
+  # Numpy and scipy seem to offset the result. So just doing slow naive version.
+  n = max(len(a), len(b))
+  aa = [a[i] if i < len(a) else 0 for i in range(n)]
+  bb = [b[i] if i < len(b) else 0 for i in range(n)]
+  return [sum([aa[j] * (0 if j > i else bb[i - j])
+      for j in range(n)]) for i in range(n)]
+
+def generateConv(write, circSizes, linSizes):
+  write(kPreamble)
+
+  for an, bn, cn in circSizes:
+    cnn = 'null' if cn is None else str(cn)
+    matfile = 'test/data/circ_conv_%d_%d_%s.mat' % (an, bn, cnn)
+    def maker():
+      a = [randReal(10) for i in range(an)]
+      b = [randReal(10) for i in range(bn)]
+      c = circConv(a, b, cn)
+      return [a, b, c]
+    createDataset(matfile, maker)
+    write("  test('Circular convolution %d %d %s', () async {" % (an, bn, cnn))
+    write("    await testCircConv('%s', %s);" % (matfile, cnn))
+    write('  });\n')
+
+  for an, bn in linSizes:
+    matfile = 'test/data/lin_conv_%d_%d.mat' % (an, bn)
+    def maker():
+      a = [randReal(10) for i in range(an)]
+      b = [randReal(10) for i in range(bn)]
+      c = linConv(a, b)
+      return [a, b, c]
+    createDataset(matfile, maker)
+    write("  test('Linear convolution %d %d', () async {" % (an, bn))
+    write("    await testLinConv('%s');" % (matfile))
+    write('  });\n')
+
+  write('}\n')
+
+def generateResamp(write, sizes):
+  write(kPreamble)
+
+  for insize, outsize in sizes:
+    matfile = 'test/data/resample_%d_%d.mat' % (insize, outsize)
+    def includeFreq(f, size):
+      return f * 2 <= size
+    def addFreq(a, f):
+      if not includeFreq(f, len(a)):
+        return
+      dt = f * 2 * math.pi / len(a)
+      for i in range(len(a)):
+        a[i] += math.sin(i * dt) / math.sqrt(f)
+    def maker():
+      a = [0] * insize
+      b = [0] * outsize
+      f = 1
+      while includeFreq(f, insize) and includeFreq(f, outsize):
+        addFreq(a, f)
+        addFreq(b, f)
+        f = math.ceil(f * 1.5)
+      return [a, b]
+    createDataset(matfile, maker)
+    write("  test('Resample %d %d', () async {" % (insize, outsize))
+    write("    await testResample('%s');" % (matfile))
+    write('  });\n')
+
+  write('}\n')
+
+def run(gen, testName, *args):
+  outFile = os.path.normpath(os.path.join(
+      os.path.dirname(__file__), testName + '_generated_test.dart'))
   print('Writing %s' % outFile)
   with open(outFile, 'w') as f:
     gen(writer(f), *args)
 
-run(generate, 'fixed2_fft_generated_test.dart', 'Fixed2FFT', [2])
-run(generate, 'fixed3_fft_generated_test.dart', 'Fixed3FFT', [3])
-run(generate, 'radix2_fft_generated_test.dart', 'Radix2FFT',
-    [2 ** i for i in range(11)])
-run(generate, 'naive_fft_generated_test.dart', 'NaiveFFT',
-    [i + 1 for i in range(16)])
-run(generate, 'prime_padded_fft_generated_test.dart', 'PrimeFFT',
+run(generate, 'fixed2_fft', 'Fixed2FFT', [2])
+run(generate, 'fixed3_fft', 'Fixed3FFT', [3])
+run(generate, 'fixed4_fft', 'Fixed4FFT', [4])
+run(generate, 'fixed5_fft', 'Fixed5FFT', [5])
+run(generate, 'radix2_fft', 'Radix2FFT', [2 ** i for i in range(11)])
+run(generate, 'naive_fft', 'NaiveFFT', [i + 1 for i in range(16)])
+run(generate, 'prime_padded_fft', 'PrimeFFT',
     [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 1009, 7919, 28657], ', true')
-run(generate, 'prime_unpadded_fft_generated_test.dart', 'PrimeFFT',
+run(generate, 'prime_unpadded_fft', 'PrimeFFT',
     [3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 1009, 7919, 28657], ', false')
-run(generate, 'composite_fft_generated_test.dart', 'CompositeFFT',
+run(generate, 'composite_fft', 'CompositeFFT',
     [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
-run(generate, 'fft_generated_test.dart', 'FFT',
+run(generate, 'fft', 'FFT',
     [i + 1 for i in range(12)] + [461, 752, 1980, 2310, 2442, 3410, 4913, 7429])
-run(generateMisc, 'misc_generated_test.dart')
+run(generateConv, 'convolution',
+    [(1, 1, 1), (5, 47, 47), (91, 12, 91), (127, 129, 128), (337, 321, 330),
+    (1024, 1024, 1024), (2000, 3000, 1400), (123, 456, None), (456, 789, None),
+    (1234, 1234, None)],
+    [(1, 1), (4, 4), (5, 47), (91, 12), (127, 129), (337, 321), (1024, 1024)])
+run(generateResamp, 'resample',
+    [(1000, outsize) for outsize in [100, 300, 800, 1000, 1500, 2000, 5000]])
+run(generateMisc, 'misc')
 print('Done :)')

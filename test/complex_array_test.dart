@@ -50,7 +50,6 @@ void main() {
   test('ComplexArray to and from reals', () {
     final a = ComplexArray.fromRealArray([123, 456]);
     expect(a.length, 2);
-    expect(a.length, 2);
     expect(a[0].x, 123);
     expect(a[0].y, 0);
     expect(a[1].x, 456);
@@ -60,6 +59,28 @@ void main() {
     expect(b.length, 2);
     expect(b[0], 123);
     expect(b[1], 456);
+  });
+
+  test('ComplexArray from reals, zero padding', () {
+    final a = ComplexArray.fromRealArray([123, 456], 5);
+    expect(a.length, 5);
+    expect(a[0].x, 123);
+    expect(a[0].y, 0);
+    expect(a[1].x, 456);
+    expect(a[1].y, 0);
+    expect(a[2].x, 0);
+    expect(a[2].y, 0);
+    expect(a[3].x, 0);
+    expect(a[3].y, 0);
+    expect(a[4].x, 0);
+    expect(a[4].y, 0);
+  });
+
+  test('ComplexArray from reals, truncation', () {
+    final a = ComplexArray.fromRealArray([123, 456, 789], 1);
+    expect(a.length, 1);
+    expect(a[0].x, 123);
+    expect(a[0].y, 0);
   });
 
   test('ComplexArray magnitudes', () {
@@ -77,7 +98,41 @@ void main() {
     expect(mag[1], 13);
   });
 
+  test('ComplexArray complexMultiply', () {
+    final a = makeArray([
+      -1.2, 3.4, 2.4, -6.8, -3.6, -10.2, 4.8, 13.6, -6, 17, 7.2, -20.4, //
+      -8.4, -23.8, 9.6, 27.2, -10.8, 30.6, 12, -34, -13.2, -37.4, 14.4, //
+      40.8, -15.6, 44.2, 16.8, -47.6, -18, -51, 19.2, 54.4,
+    ]);
+    final b = makeArray([
+      54.4, 19.2, 51, 18, 47.6, 16.8, -44.2, 15.6, -40.8, 14.4, -37.4, 13.2, //
+      -34, 12, 30.6, -10.8, 27.2, -9.6, 23.8, -8.4, 20.4, -7.2, -17, -6, //
+      -13.6, -4.8, -10.2, -3.6, -6.8, -2.4, 3.4, 1.2,
+    ]);
+    final c = makeArray([
+      -130.56, 161.92, 244.80, -303.60, 0, -546, -424.32, -526.24, 0, -780, //
+      0, 858, 571.20, 708.40, 587.52, 728.64, 0, 936, 0, -910, -538.56, //
+      -667.92, 0, -780, 424.32, -526.24, -342.72, 425.04, 0, 390, 0, 208,
+    ]);
+    a.complexMultiply(b);
+    expectClose2(a, c);
+
+    expect(
+      () => a.complexMultiply(makeArray([1, 2, 3, 4])),
+      throwsA(
+        predicate(
+          (e) =>
+              e is ArgumentError && e.message == 'Input is the wrong length.',
+        ),
+      ),
+    );
+  });
+
   test('ComplexArray discardConjugates', () {
+    expect(
+      toFloats(makeArray([]).discardConjugates()),
+      [],
+    );
     expect(
       toFloats(makeArray([1, 2]).discardConjugates()),
       [1, 2],
@@ -101,6 +156,154 @@ void main() {
     expect(
       toFloats(
         makeArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])
+            .discardConjugates(),
+      ),
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    );
+  });
+
+  test('ComplexArray createConjugates', () {
+    expect(
+      toFloats(makeArray([]).createConjugates(0)),
+      [],
+    );
+    expect(
+      toFloats(makeArray([1, 2]).createConjugates(1)),
+      [1, 2],
+    );
+    expect(
+      toFloats(makeArray([1, 2, 3, 4]).createConjugates(2)),
+      [1, 2, 3, 4],
+    );
+    expect(
+      toFloats(makeArray([1, 2, 3, 4]).createConjugates(3)),
+      [1, 2, 3, 4, 3, -4],
+    );
+    expect(
+      toFloats(makeArray([1, 2, 3, 4, 5, 6]).createConjugates(4)),
+      [1, 2, 3, 4, 5, 6, 3, -4],
+    );
+    expect(
+      toFloats(makeArray([1, 2, 3, 4, 5, 6]).createConjugates(5)),
+      [1, 2, 3, 4, 5, 6, 5, -6, 3, -4],
+    );
+    expect(
+      toFloats(makeArray([1, 2, 3, 4, 5, 6, 7, 8]).createConjugates(6)),
+      [1, 2, 3, 4, 5, 6, 7, 8, 5, -6, 3, -4],
+    );
+    expect(
+      toFloats(makeArray([1, 2, 3, 4, 5, 6, 7, 8]).createConjugates(7)),
+      [1, 2, 3, 4, 5, 6, 7, 8, 7, -8, 5, -6, 3, -4],
+    );
+    expect(
+      toFloats(makeArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).createConjugates(8)),
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 7, -8, 5, -6, 3, -4],
+    );
+    expect(
+      toFloats(makeArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).createConjugates(9)),
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 9, -10, 7, -8, 5, -6, 3, -4],
+    );
+
+    final throws = throwsA(
+      predicate(
+        (e) =>
+            e is ArgumentError &&
+            e.message ==
+                'Output length must be either '
+                    '(2 * length - 2) or (2 * length - 1).',
+      ),
+    );
+    expect(
+      () => makeArray([]).createConjugates(-1),
+      throws,
+    );
+    expect(
+      () => makeArray([]).createConjugates(1),
+      throws,
+    );
+    expect(
+      () => makeArray([1, 2]).createConjugates(0),
+      throws,
+    );
+    expect(
+      () => makeArray([1, 2]).createConjugates(3),
+      throws,
+    );
+    expect(
+      () => makeArray([1, 2, 3, 4]).createConjugates(1),
+      throws,
+    );
+    expect(
+      () => makeArray([1, 2, 3, 4]).createConjugates(4),
+      throws,
+    );
+    expect(
+      () => makeArray([1, 2, 3, 4, 5, 6]).createConjugates(3),
+      throws,
+    );
+    expect(
+      () => makeArray([1, 2, 3, 4, 5, 6]).createConjugates(6),
+      throws,
+    );
+  });
+
+  test('ComplexArray discardConjugates inverts createConjugates', () {
+    expect(
+      toFloats(makeArray([]).createConjugates(0).discardConjugates()),
+      [],
+    );
+    expect(
+      toFloats(makeArray([1, 2]).createConjugates(1).discardConjugates()),
+      [1, 2],
+    );
+    expect(
+      toFloats(makeArray([1, 2, 3, 4]).createConjugates(2).discardConjugates()),
+      [1, 2, 3, 4],
+    );
+    expect(
+      toFloats(makeArray([1, 2, 3, 4]).createConjugates(3).discardConjugates()),
+      [1, 2, 3, 4],
+    );
+    expect(
+      toFloats(
+        makeArray([1, 2, 3, 4, 5, 6]).createConjugates(4).discardConjugates(),
+      ),
+      [1, 2, 3, 4, 5, 6],
+    );
+    expect(
+      toFloats(
+        makeArray([1, 2, 3, 4, 5, 6]).createConjugates(5).discardConjugates(),
+      ),
+      [1, 2, 3, 4, 5, 6],
+    );
+    expect(
+      toFloats(
+        makeArray([1, 2, 3, 4, 5, 6, 7, 8])
+            .createConjugates(6)
+            .discardConjugates(),
+      ),
+      [1, 2, 3, 4, 5, 6, 7, 8],
+    );
+    expect(
+      toFloats(
+        makeArray([1, 2, 3, 4, 5, 6, 7, 8])
+            .createConjugates(7)
+            .discardConjugates(),
+      ),
+      [1, 2, 3, 4, 5, 6, 7, 8],
+    );
+    expect(
+      toFloats(
+        makeArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+            .createConjugates(8)
+            .discardConjugates(),
+      ),
+      [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    );
+    expect(
+      toFloats(
+        makeArray([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+            .createConjugates(9)
             .discardConjugates(),
       ),
       [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],

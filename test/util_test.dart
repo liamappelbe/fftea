@@ -88,6 +88,16 @@ void main() {
     }
   });
 
+  test('Merge twos into fours', () {
+    expect(mergeTwosIntoFours([3, 5, 7]), [3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 3, 5, 7]), [2, 3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 2, 3, 5, 7]), [4, 3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 2, 2, 3, 5, 7]), [2, 4, 3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 2, 2, 2, 3, 5, 7]), [4, 4, 3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 2, 2, 2, 2, 3, 5, 7]), [2, 4, 4, 3, 5, 7]);
+    expect(mergeTwosIntoFours([2, 2, 2, 2, 2, 2, 3, 5, 7]), [4, 4, 4, 3, 5, 7]);
+  });
+
   test('Prime factors', () {
     expect(primeFactors(1), []);
     expect(primeFactors(2), [2]);
@@ -114,6 +124,14 @@ void main() {
     expect(largestPrimeFactor(9), 3);
     expect(largestPrimeFactor(10), 5);
     expect(largestPrimeFactor(453974598), 101);
+  });
+
+  test('Largest prime factor is above', () {
+    for (int n = 1; n <= 1000; ++n) {
+      for (int k = 2; k <= 30; ++k) {
+        expect(largestPrimeFactorIsAbove(n, k), largestPrimeFactor(n) > k);
+      }
+    }
   });
 
   test('Prime padding heuristic', () {

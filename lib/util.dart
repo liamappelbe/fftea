@@ -19,9 +19,14 @@ import 'dart:typed_data';
 /// numbers.
 extension ComplexArray on Float64x2List {
   /// Converts a real array to a [Float64x2List] of complex numbers.
-  static Float64x2List fromRealArray(List<double> reals) {
-    final a = Float64x2List(reals.length);
-    for (int i = 0; i < reals.length; ++i) {
+  static Float64x2List fromRealArray(
+    List<double> reals, [
+    int outputLength = -1,
+  ]) {
+    if (outputLength < 0) outputLength = reals.length;
+    final a = Float64x2List(outputLength);
+    final copyLength = math.min(reals.length, outputLength);
+    for (int i = 0; i < copyLength; ++i) {
       a[i] = Float64x2(reals[i], 0);
     }
     return a;
@@ -61,6 +66,27 @@ extension ComplexArray on Float64x2List {
     return m;
   }
 
+  /// Complex multiplies each element of [other] onto each element of this list.
+  ///
+  /// This method modifies this array, rather than allocating a new array. The
+  /// other array must have the same length as this one.
+  void complexMultiply(Float64x2List other) {
+    if (other.length != length) {
+      throw ArgumentError('Input is the wrong length.', 'other');
+    }
+    for (int i = 0; i < length; ++i) {
+      final a = this[i];
+      final b = other[i];
+      this[i] = a.scale(b.x) + Float64x2(-a.y, a.x).scale(b.y);
+    }
+  }
+
+  /// Returns the length of the result of calling [discardConjugates] on a list
+  /// of the given [length]. See [discardConjugates] for more information.
+  static int discardConjugatesLength(int length) {
+    return (length == 0) ? 0 : ((length >>> 1) + 1);
+  }
+
   /// Discards redundant conjugate terms, assuming this is the result of a real
   /// valued FFT. This method does not check whether those terms are actualy
   /// redundant conjugate values.
@@ -76,7 +102,52 @@ extension ComplexArray on Float64x2List {
   /// This method returns a new array (which is a view into the same data). It
   /// does not modify this array, or make a copy of the data.
   Float64x2List discardConjugates() {
-    return Float64x2List.sublistView(this, 0, (length >>> 1) + 1);
+    return Float64x2List.sublistView(this, 0, discardConjugatesLength(length));
+  }
+
+  /// Creates redundant conjugate terms. This is the inverse of
+  /// [discardConjugates], and it only really makes sense to recreate conjugates
+  /// after they have been discarded using that method.
+  ///
+  /// When discarding the conjugates, an array of e.g. 10 elements or 11
+  /// elements will both end up with 6 elements left. So when recreating them,
+  /// the [outputLength] needs to be specified. It should be the same as the
+  /// length of the array before [discardConjugates] was called.
+  ///
+  /// The intended use case for this function is as part of a signal processing
+  /// pipeline like this:
+  ///
+  /// 1. Take in a real valued time domain input
+  /// 2. Perform an FFT to get the frequency domain signal
+  /// 3. Discard the redundant conjugates using [discardConjugates]
+  /// 4. Perform some manipulations on the complex frequency domain signal
+  /// 5. Recreate the conjugates using [createConjugates]
+  /// 6. Inverse FFT to get a real valued time domain output
+  ///
+  /// You could get the same output by skipping steps 3 and 5, but in that case,
+  /// care must be taken to ensure that step 4 preserves the conjugate symmetry,
+  /// which can be fiddly. If that symmetry is lost, then the final time domain
+  /// output will contain complex values, not just real values. So it's usually
+  /// easier to discard the conjugates and then recreate them later.
+  ///
+  /// This method returns a totally new array containing a copy of this array,
+  /// with the extra values appended at the end.
+  Float64x2List createConjugates(int outputLength) {
+    if (discardConjugatesLength(outputLength) != length) {
+      throw ArgumentError(
+        'Output length must be either (2 * length - 2) or (2 * length - 1).',
+        'outputLength',
+      );
+    }
+    final out = Float64x2List(outputLength);
+    for (int i = 0; i < length; ++i) {
+      out[i] = this[i];
+    }
+    for (int i = length; i < outputLength; ++i) {
+      final a = this[outputLength - i];
+      out[i] = Float64x2(a.x, -a.y);
+    }
+    return out;
   }
 }
 
@@ -468,6 +539,28 @@ List<int> primeFactors(int n) {
   return a;
 }
 
+/// Merges all the twos in a prime decomposition into fours.
+///
+/// Assumes that [p] is a sorted prime decomposition. For example,
+/// `[2, 2, 2, 3, 5]` becomes `[2, 4, 3, 5]`. Note that the result won't quite
+/// be sorted.
+List<int> mergeTwosIntoFours(List<int> p) {
+  int n = 0;
+  for (final x in p) {
+    if (x != 2) break;
+    ++n;
+  }
+  final q = <int>[];
+  if (n.isOdd) q.add(2);
+  for (int i = 1; i < n; i += 2) {
+    q.add(4);
+  }
+  for (int i = n; i < p.length; ++i) {
+    q.add(p[i]);
+  }
+  return q;
+}
+
 /// Returns the largest prime factor of [n].
 ///
 /// For example, 120 returns 5.
@@ -487,6 +580,23 @@ int largestPrimeFactor(int n) {
   return maxp;
 }
 
+/// Returns whether `largestPrimeFactor(n) > k`.
+///
+/// This function is significantly more efficient than doing that check
+/// explicitly.
+bool largestPrimeFactorIsAbove(int n, int k) {
+  for (int i = 0, p = 2;;) {
+    if (p * p > n || p > k) break;
+    if (n % p != 0) {
+      i += 1;
+      p = primes.getPrime(i);
+    } else {
+      n ~/= p;
+    }
+  }
+  return n > k;
+}
+
 /// Returns whether padding the PrimeFFT to a power of two size is likely to be
 /// faster than not padding it.
 ///
@@ -495,7 +605,7 @@ int largestPrimeFactor(int n) {
 /// simple heuristic is wrong.
 bool primePaddingHeuristic(int n) {
   if (n == 31 || n == 61 || n == 101 || n == 241 || n == 251) return true;
-  return largestPrimeFactor(n - 1) > 5;
+  return largestPrimeFactorIsAbove(n - 1, 5);
 }
 
 /// Returns the highest set bit of [x], where [x] is a power of 2.

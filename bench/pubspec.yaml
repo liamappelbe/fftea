@@ -19,6 +19,7 @@ publish_to: 'none'
 
 version: 1.0.0
 
+# We import some legacy libraries for benchmarking, so use older SDKs.
 environment:
   sdk: ">=2.7.0 <3.0.0"
 

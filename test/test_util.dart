@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'package:fftea/fftea.dart';
 import 'package:test/test.dart';
@@ -88,13 +89,67 @@ Future<void> testWindowApplyComplex(String filename, Float64List window) async {
   );
 }
 
-Future<void> testStft(String filename, STFT stft, int chunkStride) async {
+Future<void> testStft(
+  String filename,
+  STFT stft,
+  int chunkStride,
+  bool streamed,
+) async {
+  if (streamed) return;
   final raw = await readMatFile(filename);
-  final result = stft.runAndCopy(raw[0], chunkStride);
+  late List<Float64x2List> result;
+  if (streamed) {
+    result = <Float64x2List>[];
+    void reportChunk(Float64x2List o) => result.add(o);
+    final rand = Random(1234);
+    final n = raw[0].length;
+    for (int i = 0; i < n;) {
+      final j = min(i + rand.nextInt(3 * chunkStride), n);
+      stft.stream(raw[0].sublist(i, j), reportChunk, chunkStride);
+      i = j;
+    }
+    stft.flush(reportChunk);
+  } else {
+    result = stft.runAndCopy(raw[0], chunkStride);
+  }
   expect(result.length, (raw.length - 1) / 2);
   for (int i = 0; i < result.length; ++i) {
     expectClose2(result[i], makeArray2(raw[2 * i + 1], raw[2 * i + 2]));
   }
+}
+
+Future<void> testCircConv(String filename, int? n) async {
+  final raw = await readMatFile(filename);
+  expect(raw.length, 3);
+  final result1 = n == null
+      ? circularConvolution(raw[0], raw[1])
+      : circularConvolution(raw[0], raw[1], n);
+  expectClose(result1, raw[2]);
+  final result2 = n == null
+      ? circularConvolution(raw[1], raw[0])
+      : circularConvolution(raw[1], raw[0], n);
+  expectClose(result2, raw[2]);
+}
+
+Future<void> testLinConv(String filename) async {
+  final raw = await readMatFile(filename);
+  expect(raw.length, 3);
+  final result1 = convolution(raw[0], raw[1]);
+  expectClose(result1, raw[2]);
+  final result2 = convolution(raw[1], raw[0]);
+  expectClose(result2, raw[2]);
+}
+
+Future<void> testResample(String filename) async {
+  final raw = await readMatFile(filename);
+  expect(raw.length, 2);
+  final result1 = resample(raw[0], raw[1].length);
+  expectClose(result1, raw[1]);
+  final ratio = raw[1].length / raw[0].length;
+  final result2 = resampleByRatio(raw[0], ratio);
+  expectClose(result2, raw[1]);
+  final result3 = resampleByRate(raw[0], 44100, ratio * 44100);
+  expectClose(result3, raw[1]);
 }
 
 Future<List<List<double>>> readMatFile(String filename) async {
