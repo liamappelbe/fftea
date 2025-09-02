@@ -212,14 +212,10 @@ bool _isPrimeMrTest(int a, int n, int n_1, int d) {
   return false;
 }
 
-/// Returns whether [n] is a prime number.
-bool isPrimeMr(int n) {
+/// Returns whether [n] is a prime number. Assumes [n] is odd and > 2.
+bool _isPrimeMr(int n) {
   // https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test
   // https://oeis.org/A014233
-  if (n <= 1) return false;
-  if (n == 2) return true;
-  if (n.isEven) return false;
-
   final n_1 = n - 1;
   final d = n_1 >>> trailingZeros(n_1);
 
@@ -361,8 +357,6 @@ const _isPrimeMr2SmallPrimesAndSquares = [
 ];
 
 bool _isPrimeMr2(int n) {
-  // https://en.wikipedia.org/wiki/Miller%E2%80%93Rabin_primality_test
-  // https://oeis.org/A014233
   if (n <= 1) return false;
   if (n == 2) return true;
   if (n.isEven) return false;
@@ -378,25 +372,7 @@ bool _isPrimeMr2(int n) {
     return true;
   }
 
-  final n_1 = n - 1;
-  final d = n_1 >>> trailingZeros(n_1);
-  if (!_isPrimeMrTest(2, n, n_1, d)) return false;
-  if (!_isPrimeMrTest(3, n, n_1, d)) return false;
-  if (!_isPrimeMrTest(5, n, n_1, d)) return false;
-  if (!_isPrimeMrTest(7, n, n_1, d)) return false;
-  if (n < 3215031751) return true;
-  if (!_isPrimeMrTest(11, n, n_1, d)) return false;
-  if (n < 2152302898747) return true;
-  if (!_isPrimeMrTest(13, n, n_1, d)) return false;
-  if (n < 3474749660383) return true;
-  if (!_isPrimeMrTest(17, n, n_1, d)) return false;
-  if (!_isPrimeMrTest(19, n, n_1, d)) return false;
-  if (n < 341550071728321) return true;
-  if (!_isPrimeMrTest(23, n, n_1, d)) return false;
-  if (!_isPrimeMrTest(29, n, n_1, d)) return false;
-  if (!_isPrimeMrTest(31, n, n_1, d)) return false;
-  if (n < 3825123056546413051) return true;
-  return _isPrimeMrTest(37, n, n_1, d);
+  return isPrimeMr(n);
 }
 
 /// Returns the prime decomposition of [n].
