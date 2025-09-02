@@ -47,7 +47,7 @@ void main() {
   });
 
   test('Primes stores O(sqrt(n))', () {
-    expect(primes.internalIsPrime(2097593), isTrue);
+    expect(primeFactors(2097593), [2097593]);
     expect(primes.numPrimes, 230);
     expect(primes.getPrime(229), 1451);
   });
