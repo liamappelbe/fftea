@@ -99,7 +99,8 @@ void main() {
       int g = (n.toDouble() * r.nextDouble()).toInt();
       int k = (n.toDouble() * r.nextDouble()).toInt();
       int y1 = util.expMod(g, k, n);
-      int y2 = expModBigInt(BigInt.from(g), BigInt.from(k), BigInt.from(n)).toInt();
+      int y2 =
+          expModBigInt(BigInt.from(g), BigInt.from(k), BigInt.from(n)).toInt();
       if (y1 != y2) {
         print('$n, $g, $k, $n, $y1, $y2');
         return false;
@@ -111,5 +112,4 @@ void main() {
   //print(util.expMod(431665002, 2349572900, 3037036544));
   //print('\n');
   //print(expModBigInt(BigInt.from(431665002), BigInt.from(2349572900), BigInt.from(3037036544)));
-
 }
